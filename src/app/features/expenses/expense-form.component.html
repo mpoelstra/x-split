@@ -1,0 +1,74 @@
+<div class="purchase-shell">
+  <div class="crumbs">Purchases <span>›</span> Add New Purchase</div>
+  <header class="topbar">
+    <div class="left">
+      <button type="button" class="back" (click)="goBack()">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <div class="titles">
+        <h1>Add New Purchase</h1>
+        <p>
+          @if (currentBill(); as bill) {
+            Bill: {{ bill.title }} · with {{ bill.friendName }}
+          } @else {
+            Record a new game or DLC to split the costs with your group.
+          }
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <main class="body">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="form-card">
+      <div class="field">
+        <label>Game Title</label>
+        <input type="text" formControlName="gameTitle" placeholder="Enter game title" />
+      </div>
+
+      <div class="field">
+        <label>Share with</label>
+        @if (currentBill(); as bill) {
+          <div class="chips">
+            <span class="chip active"><i></i>{{ bill.friendName }}</span>
+          </div>
+        } @else {
+          <div class="chips">
+            <span class="chip">No bill selected</span>
+          </div>
+        }
+      </div>
+
+      <div class="grid-two">
+        <div class="field">
+          <label>Price (EUR)</label>
+          <div class="input-wrap">
+            <span class="money">€</span>
+            <input type="text" formControlName="amount" inputmode="decimal" placeholder="0.00" />
+          </div>
+          <small class="field-error" [class.visible]="!!amountErrorMessage()">
+            {{ amountErrorMessage() || ' ' }}
+          </small>
+        </div>
+
+        <div class="field">
+          <label>Who Paid?</label>
+          <select formControlName="paidByMemberId">
+            @for (member of memberOptions(); track member.id) {
+              <option [value]="member.id">{{ member.displayName }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Date</label>
+        <input type="date" formControlName="expenseDate" />
+      </div>
+
+      <button type="submit" class="submit" [disabled]="submitting()">
+        <span class="material-symbols-outlined">account_balance_wallet</span>
+        Add to Balance
+      </button>
+    </form>
+  </main>
+</div>

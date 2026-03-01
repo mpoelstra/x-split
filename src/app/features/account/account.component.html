@@ -1,0 +1,61 @@
+<div class="account-page">
+  <header class="account-head">
+    <div>
+      <h1>Account</h1>
+      <p>Signed-in profile details for this X-Split session.</p>
+    </div>
+    <a routerLink="/app/dashboard" class="soft-link">Back to dashboard</a>
+  </header>
+
+  <section class="profile-card">
+    <div class="profile-top">
+      <div class="avatar">
+        @if (user()?.avatarUrl && !avatarLoadFailed) {
+          <img
+            [src]="user()?.avatarUrl"
+            [alt]="(user()?.displayName || 'User') + ' avatar'"
+            referrerpolicy="no-referrer"
+            crossorigin="anonymous"
+            (error)="onAvatarLoadError()"
+          />
+        } @else {
+          <span>{{ initials() }}</span>
+        }
+      </div>
+      <div>
+        <h2>{{ user()?.displayName || 'Unknown user' }}</h2>
+        <p>{{ user()?.email || 'No email available' }}</p>
+      </div>
+    </div>
+
+    <div class="meta-grid">
+      <div>
+        <small>User ID</small>
+        <strong>{{ user()?.id || '-' }}</strong>
+      </div>
+      <div>
+        <small>App mode</small>
+        <strong>{{ mode }}</strong>
+      </div>
+      <div>
+        <small>Auth bypass</small>
+        <strong>{{ authBypass ? 'enabled' : 'disabled' }}</strong>
+      </div>
+    </div>
+
+    <button type="button" class="signout" (click)="signOut()">Sign out</button>
+  </section>
+
+  @if (isAdmin()) {
+    <section class="admin-card">
+      <h2>Admin</h2>
+      <p>Danger zone: clear app data but keep your admin profile row.</p>
+      <button type="button" class="danger" [disabled]="adminResetBusy()" (click)="adminResetData()">
+        {{ adminResetBusy() ? 'Resetting...' : 'Reset bills + profiles (keep admin)' }}
+      </button>
+      @if (adminResetDone()) {
+        <small>Reset completed.</small>
+      }
+    </section>
+  }
+</div>

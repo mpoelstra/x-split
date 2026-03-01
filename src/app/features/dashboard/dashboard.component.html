@@ -1,0 +1,66 @@
+<section class="hero">
+  <div>
+    <h2>Dashboard</h2>
+    @if (currentBill(); as bill) {
+      <p class="bill-line">Bill: {{ bill.title }} · with {{ bill.friendName }}</p>
+      <p [class.positive]="myBalance() > 0" [class.negative]="myBalance() < 0">
+        @if (myBalance() > 0) {
+          You are owed {{ myBalance() | currency : 'USD' : 'symbol' : '1.2-2' }}
+        } @else if (myBalance() < 0) {
+          You owe {{ (myBalance() * -1) | currency : 'USD' : 'symbol' : '1.2-2' }}
+        } @else {
+          You are settled up
+        }
+      </p>
+    } @else {
+      <p>No active bill selected. Create one to start tracking expenses.</p>
+    }
+  </div>
+  <div class="hero-actions">
+    @if (currentBill()) {
+      <a routerLink="/app/expenses/new" class="cta"><span class="material-symbols-outlined">add</span>Add Expense</a>
+    } @else {
+      <a routerLink="/app/bills" class="cta"><span class="material-symbols-outlined">add</span>Add Bill</a>
+    }
+  </div>
+</section>
+
+@if (currentBill()) {
+  <section class="stats">
+    <article>
+      <p>Total Balance</p>
+      <strong class="positive">
+        {{ myBalance() >= 0 ? '+' : '' }}{{ myBalance() | currency : 'USD' : 'symbol' : '1.2-2' }}
+      </strong>
+    </article>
+    <article>
+      <p>Total Expenses</p>
+      <strong>{{ totalExpenses() | currency : 'USD' : 'symbol' : '1.2-2' }}</strong>
+    </article>
+    <article>
+      <p>Active Shares</p>
+      <strong>{{ expenses().length }} Games</strong>
+    </article>
+  </section>
+
+  <section class="activity">
+    <h3>Recent Activity</h3>
+    @if (recentActivity().length === 0) {
+      <p>No activity yet for this bill.</p>
+    } @else {
+      @for (expense of recentActivity(); track expense.id) {
+        <div class="activity-row">
+          <div class="avatar"><span class="material-symbols-outlined">account_circle</span></div>
+          <div class="meta">
+            <p>{{ payerName(expense.paidByMemberId) }} paid for '{{ expense.gameTitle }}'</p>
+            <small>{{ expense.expenseDate }}</small>
+          </div>
+          <strong>+{{ expense.amount / 2 | currency : expense.currency : 'symbol' : '1.2-2' }}</strong>
+        </div>
+      }
+    }
+  </section>
+}
+@if (isStub) {
+  <button type="button" class="chip hidden-chip" (click)="resetDemoData()">Reset demo data</button>
+}

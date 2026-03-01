@@ -1,0 +1,125 @@
+<div class="import-page">
+  <header class="import-head">
+    <div>
+      <h1>Import CSV</h1>
+      <p>Upload Splitwise export, choose bill, and map CSV users to app members.</p>
+    </div>
+    <a routerLink="/app/bills" class="soft-link">Manage bills</a>
+  </header>
+
+  <section class="panel upload-panel">
+    <h2>1) Upload CSV</h2>
+    <label class="file-input">
+      <input type="file" accept=".csv,text/csv" (change)="onCsvFileChange($event)" />
+      <span>Select CSV file</span>
+    </label>
+
+    @if (fileName()) {
+      <p class="meta">File: {{ fileName() }}</p>
+    }
+
+    @if (parseError()) {
+      <p class="error">{{ parseError() }}</p>
+    }
+
+    @if (parsedRows().length > 0) {
+      <p class="success">Parsed {{ parsedRows().length }} expense rows.</p>
+    }
+  </section>
+
+  <section class="panel" [ngClass]="{ disabled: parsedRows().length === 0 }">
+    <h2>2) Select Bill</h2>
+    @if (bills().length > 0) {
+      <select [value]="selectedBillId()" (change)="onBillChange($event)">
+        @for (bill of bills(); track bill.id) {
+          <option [value]="bill.id">{{ bill.title }} - {{ bill.friendName }}</option>
+        }
+      </select>
+    } @else {
+      <div class="create-bill-inline">
+        <input
+          type="text"
+          [value]="newBillTitle()"
+          (input)="onNewBillTitleChange($event)"
+          placeholder="Bill title"
+        />
+        <input
+          type="email"
+          [value]="friendInviteEmail()"
+          (input)="onFriendInviteEmailChange($event)"
+          placeholder="Friend email"
+        />
+        <button type="button" class="cta ghost" [disabled]="creatingBill()" (click)="createImportBill()">
+          @if (creatingBill()) {
+            Creating...
+          } @else {
+            Create bill for import
+          }
+        </button>
+      </div>
+      <p class="meta">Create at least one bill first to import rows.</p>
+    }
+  </section>
+
+  <section class="panel" [ngClass]="{ disabled: participantHeaders().length === 0 }">
+    <h2>3) Map CSV users to app users</h2>
+    <div class="mapping-grid">
+      @for (header of participantHeaders(); track header) {
+        <div class="mapping-row">
+          <label>{{ header }}</label>
+          <select
+            [value]="headerMapping()[header] || ''"
+            (change)="onMappingChange(header, ($any($event.target).value))"
+          >
+            <option value="">Select member...</option>
+            @for (member of memberOptions(); track member.id) {
+              <option [value]="member.id">{{ member.displayName }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="panel" [ngClass]="{ disabled: parsedRows().length === 0 }">
+    <h2>4) Preview + Import</h2>
+    <div class="preview-stats">
+      <div>
+        <small>Ready</small>
+        <strong>{{ preview().ready.length }}</strong>
+      </div>
+      <div>
+        <small>Skipped</small>
+        <strong>{{ preview().skipped.length }}</strong>
+      </div>
+      <div>
+        <small>Target bill</small>
+        <strong>{{ selectedBillTitle() }}</strong>
+      </div>
+    </div>
+
+    <button type="button" class="cta" [disabled]="!canImport() || importing()" (click)="runImport()">
+      @if (importing()) {
+        Importing... ({{ importProcessed() }}/{{ importTotal() }})
+      } @else {
+        Import rows
+      }
+    </button>
+
+    @if (result(); as done) {
+      <div class="result">
+        <strong>Import done</strong>
+        <p>Inserted: {{ done.inserted }} | Skipped: {{ done.skipped }} | Failed: {{ done.failed }}</p>
+      </div>
+    }
+
+    @if (preview().skipped.length > 0) {
+      <div class="skip-list">
+        <strong>Skipped preview rows</strong>
+        @for (item of preview().skipped.slice(0, 8); track item.line) {
+          <p>Line {{ item.line }}: {{ item.reason }}</p>
+        }
+      </div>
+    }
+  </section>
+</div>

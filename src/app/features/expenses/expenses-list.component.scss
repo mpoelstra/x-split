@@ -1,0 +1,173 @@
+.history-page {
+  display: grid;
+  gap: 12px;
+}
+
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 2.05rem;
+    line-height: 1;
+    font-weight: 800;
+    color: #f2f5e9;
+  }
+
+  p {
+    margin: 0;
+    color: #8d9989;
+    font-size: 0.88rem;
+  }
+}
+
+.cta {
+  border-radius: 12px;
+  padding: 11px 16px;
+  text-decoration: none;
+  background: #899311;
+  color: #fff;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-card {
+  background: #1f2730;
+  border-radius: 16px;
+  border: 1px solid rgba(79, 88, 98, 0.45);
+  overflow: hidden;
+}
+
+.empty-card {
+  padding: 18px;
+
+  p {
+    margin: 0;
+    color: #9aa7b5;
+    font-size: 0.9rem;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1.9fr 1.2fr 1.2fr 0.8fr 0.55fr;
+  gap: 12px;
+  padding: 12px 16px;
+  align-items: center;
+  border-top: 1px solid rgba(78, 87, 97, 0.45);
+  color: #dde3d5;
+}
+
+.row.header {
+  background: rgba(45, 56, 68, 0.55);
+  border-top: none;
+  font-weight: 700;
+  color: #9eabba;
+}
+
+.game {
+  display: grid;
+  gap: 2px;
+
+  strong {
+    font-size: 0.92rem;
+    color: #f0f3ea;
+    font-weight: 700;
+  }
+
+  small {
+    color: #97a4b2;
+  }
+}
+
+.money-col {
+  display: grid;
+  gap: 1px;
+
+  small {
+    color: #96a5b5;
+    font-size: 0.78rem;
+  }
+
+  strong {
+    font-weight: 700;
+    color: #f0f3ea;
+    font-size: 1.01rem;
+  }
+}
+
+.money-col strong.loan-positive {
+  color: #57c59d;
+}
+
+.money-col strong.loan-negative {
+  color: #ff7a3c;
+}
+
+.pill {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #2b3a4b;
+  color: #a7b5c3;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pill.manual {
+  background: rgba(122, 122, 16, 0.2);
+  color: #bdc742;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.delete-btn {
+  border: 1px solid rgba(255, 122, 60, 0.34);
+  background: rgba(45, 20, 14, 0.6);
+  color: #ff7a3c;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background: rgba(66, 27, 18, 0.8);
+}
+
+.delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 860px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .history-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .history-head h1 {
+    font-size: 2.2rem;
+  }
+
+  .row.header {
+    display: none;
+  }
+}

@@ -1,0 +1,243 @@
+.bills-page {
+  display: grid;
+  gap: 14px;
+}
+
+.page-head {
+  h1 {
+    margin: 0 0 3px;
+    font-size: 1.48rem;
+    line-height: 1.06;
+    font-weight: 650;
+    color: #eef3e6;
+  }
+
+  p {
+    margin: 0;
+    color: #8d9989;
+    font-size: 0.85rem;
+  }
+}
+
+.active-bill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(122, 122, 16, 0.2);
+  background: rgba(21, 27, 13, 0.75);
+  padding: 12px 14px;
+
+  small {
+    display: block;
+    color: #7e8c76;
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+  }
+
+  strong {
+    display: block;
+    color: #edf3e5;
+    font-size: 1.04rem;
+    font-weight: 640;
+    margin-bottom: 2px;
+  }
+
+  p {
+    margin: 0;
+    color: #9aaa96;
+    font-size: 0.82rem;
+  }
+}
+
+.open {
+  border: 1px solid rgba(122, 122, 16, 0.26);
+  background: rgba(137, 147, 17, 0.18);
+  color: #c9d478;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-weight: 620;
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.panel {
+  background: #1f2730;
+  border-radius: 14px;
+  border: 1px solid rgba(79, 88, 98, 0.45);
+  padding: 14px;
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 1.11rem;
+    font-weight: 620;
+    color: #eef3e6;
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 0;
+    color: #8e9bab;
+    font-size: 0.82rem;
+  }
+}
+
+.bill-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+
+  label {
+    color: #b2beaf;
+    font-size: 0.83rem;
+    font-weight: 600;
+  }
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid rgba(122, 122, 16, 0.2);
+  border-radius: 10px;
+  padding: 10px 11px;
+  font: inherit;
+  background: rgba(21, 27, 13, 0.95);
+  color: #e6ecdf;
+}
+
+.share-mode {
+  display: flex;
+  gap: 12px;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #a8b69e;
+    font-size: 0.82rem;
+    font-weight: 540;
+    cursor: pointer;
+  }
+}
+
+.submit {
+  margin-top: 4px;
+  border: none;
+  border-radius: 10px;
+  background: #899311;
+  color: #fff;
+  font-weight: 640;
+  font-size: 0.86rem;
+  padding: 11px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.bill-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.bill-item {
+  width: 100%;
+  border: 1px solid rgba(79, 88, 98, 0.5);
+  border-radius: 10px;
+  background: #232d38;
+  color: inherit;
+  padding: 10px 11px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  strong {
+    display: block;
+    color: #edf3e7;
+    font-size: 0.91rem;
+    font-weight: 620;
+    margin-bottom: 1px;
+  }
+
+  small {
+    color: #94a1af;
+    font-size: 0.78rem;
+  }
+
+  .status {
+    margin-top: 7px;
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 0.74rem;
+    font-weight: 650;
+    border: 1px solid transparent;
+  }
+
+  .status.owed {
+    background: rgba(73, 142, 114, 0.2);
+    border-color: rgba(73, 142, 114, 0.5);
+    color: #8ed1b3;
+  }
+
+  .status.owe {
+    background: rgba(224, 142, 76, 0.2);
+    border-color: rgba(224, 142, 76, 0.5);
+    color: #f2b386;
+  }
+
+  .status.even {
+    background: rgba(116, 134, 152, 0.18);
+    border-color: rgba(116, 134, 152, 0.45);
+    color: #b5c2cf;
+  }
+
+  .material-symbols-outlined {
+    color: #8794a2;
+  }
+}
+
+.bill-item.active {
+  border-color: rgba(137, 147, 17, 0.45);
+  background: rgba(137, 147, 17, 0.14);
+}
+
+.empty {
+  border: 1px dashed rgba(87, 99, 112, 0.55);
+  border-radius: 10px;
+  padding: 14px;
+  color: #90a0b0;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .active-bill {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,74 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><span class="material-symbols-outlined">stadia_controller</span></div>
+      <h1>X-Split</h1>
+    </div>
+
+    <nav class="menu">
+      <a routerLink="/app/dashboard" routerLinkActive="active"><span class="material-symbols-outlined">dashboard</span>Dashboard</a>
+      <a routerLink="/app/bills" routerLinkActive="active"><span class="material-symbols-outlined">receipt_long</span>Bills</a>
+      <a routerLink="/app/expenses" routerLinkActive="active"><span class="material-symbols-outlined">history</span>Expenses</a>
+      <a routerLink="/app/friends" routerLinkActive="active"><span class="material-symbols-outlined">group</span>Friends</a>
+      <a routerLink="/app/account" routerLinkActive="active"><span class="material-symbols-outlined">account_circle</span>Account</a>
+      <a routerLink="/app/import" routerLinkActive="active"><span class="material-symbols-outlined">upload_file</span>Import</a>
+    </nav>
+
+  </aside>
+
+  <main class="content">
+    <header class="content-topbar">
+      <div class="search">Search friends or games...</div>
+      <div class="bill-switcher">
+        @if (bills().length > 0) {
+          <label for="global-bill-select">Current bill</label>
+          <div class="bill-switcher-row">
+            <select
+              id="global-bill-select"
+              [value]="currentBill()?.id ?? ''"
+              [disabled]="switchingBill()"
+              (change)="onBillSelect($event)"
+            >
+              @for (bill of bills(); track bill.id) {
+                <option [value]="bill.id">{{ bill.title }} - {{ bill.friendName }}</option>
+              }
+            </select>
+            <span class="bill-badge" [class.owed]="billTone() === 'owed'" [class.owe]="billTone() === 'owe'" [class.even]="billTone() === 'even'">
+              @if (billTone() === 'owed') {
+                Owed €{{ billAmount().toFixed(2) }}
+              } @else if (billTone() === 'owe') {
+                Owe €{{ billAmount().toFixed(2) }}
+              } @else {
+                Even
+              }
+            </span>
+          </div>
+        } @else {
+          <a class="create-bill-link" routerLink="/app/bills">Create first bill</a>
+        }
+      </div>
+      <div class="top-actions">
+        <a routerLink="/app/account" class="profile-link">
+          <span class="profile-name">{{ userDisplayName() }}</span>
+          <span class="avatar">
+            @if (user()?.avatarUrl && !avatarLoadFailed()) {
+              <img
+                [src]="user()?.avatarUrl"
+                [alt]="userDisplayName() + ' avatar'"
+                referrerpolicy="no-referrer"
+                crossorigin="anonymous"
+                (error)="onAvatarLoadError()"
+              />
+            } @else {
+              <span class="initials">{{ userInitials() }}</span>
+            }
+          </span>
+        </a>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

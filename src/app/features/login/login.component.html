@@ -1,0 +1,62 @@
+<div class="login-shell">
+  <header class="top-nav">
+    <div class="brand">
+      <span class="material-symbols-outlined">sports_esports</span>
+      <h2>X-Split</h2>
+    </div>
+    <div class="auth-cta">
+      <span>Don't have an account?</span>
+      <button type="button">Sign Up</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="grid-bg"></div>
+    <div class="blob blob-left"></div>
+    <div class="blob blob-right"></div>
+
+    <section class="login-card">
+      <div class="hero">
+        <span class="material-symbols-outlined">videogame_asset</span>
+      </div>
+
+      <div class="intro">
+        <h1>Welcome back</h1>
+        <p>The ultimate toolkit for gamers and creators</p>
+      </div>
+
+      @if (authBypass) {
+        <button type="button" class="sso" (click)="continueStub()">
+          <span class="material-symbols-outlined">play_circle</span>
+          Continue in local stub mode
+        </button>
+      } @else {
+        <button type="button" class="sso" (click)="signIn()">
+          <span class="google-dot"></span>
+          Sign in with Google
+        </button>
+      }
+
+      <button type="button" class="sso microsoft">
+        <span class="windows-dot"></span>
+        Sign in with Microsoft
+      </button>
+
+      <div class="or-divider"><span>OR</span></div>
+
+      <input type="email" placeholder="Email address" />
+      <button type="button" class="secondary">Continue with Email</button>
+
+      <p class="terms">By signing in, you agree to our Terms of Service and Privacy Policy.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="links">
+      <a>Support</a>
+      <a>Community</a>
+      <a>Status</a>
+    </div>
+    <p>© 2024 X-Split. All rights reserved.</p>
+  </footer>
+</div>

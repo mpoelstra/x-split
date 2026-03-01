@@ -1,0 +1,103 @@
+<div class="bills-page">
+  <header class="page-head">
+    <div>
+      <h1>Bills</h1>
+      <p>Create a bill and share it with one friend to keep expenses scoped.</p>
+    </div>
+  </header>
+
+  @if (currentBill(); as bill) {
+    <section class="active-bill">
+      <div>
+        <small>Current bill</small>
+        <strong>{{ bill.title }}</strong>
+        <p>Shared with {{ bill.friendName }}@if (bill.inviteEmail) { ({{ bill.inviteEmail }}) }</p>
+      </div>
+      <button type="button" class="open" (click)="openBill(bill)">
+        <span class="material-symbols-outlined">open_in_new</span>
+        Open dashboard
+      </button>
+    </section>
+  }
+
+  <main class="grid">
+    <section class="panel">
+      <h2>Add Bill</h2>
+      <p>Add a bill and link exactly one friend for this bill.</p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="bill-form">
+        <div class="field">
+          <label>Bill name</label>
+          <input type="text" formControlName="title" placeholder="Xbox games 2026" maxlength="64" />
+        </div>
+
+        <div class="field">
+          <label>Share with</label>
+          <div class="share-mode">
+            <label>
+              <input type="radio" formControlName="shareMode" value="friend" />
+              Current friend
+            </label>
+            <label>
+              <input type="radio" formControlName="shareMode" value="invite" />
+              Invite by email
+            </label>
+          </div>
+        </div>
+
+        @if (form.controls.shareMode.value === 'friend') {
+          <div class="field">
+            <label>Friend</label>
+            <select formControlName="friendMemberId">
+              @for (friend of friendOptions(); track friend.id) {
+                <option [value]="friend.id">{{ friend.displayName }}</option>
+              }
+            </select>
+          </div>
+        } @else {
+          <div class="field">
+            <label>Friend email</label>
+            <input type="email" formControlName="inviteEmail" placeholder="friend@example.com" />
+          </div>
+        }
+
+        <button type="submit" class="submit" [disabled]="creating()">
+          <span class="material-symbols-outlined">add</span>
+          Add bill
+        </button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Existing bills</h2>
+      <p>Select a bill to scope dashboard/history/add expense.</p>
+
+      <div class="bill-list">
+        @for (bill of bills(); track bill.id) {
+          <button type="button" class="bill-item" [class.active]="currentBill()?.id === bill.id" (click)="selectBill(bill)">
+            <div>
+              <strong>{{ bill.title }}</strong>
+              <small>Shared with {{ bill.friendName }}</small>
+              @if (statusFor(bill.id); as status) {
+                <span class="status" [class.owed]="status.tone === 'owed'" [class.owe]="status.tone === 'owe'" [class.even]="status.tone === 'even'">
+                  @if (status.tone === 'owed') {
+                    You are owed {{ status.amount | currency : 'EUR' : 'symbol' : '1.2-2' }}
+                  } @else if (status.tone === 'owe') {
+                    You owe {{ status.amount | currency : 'EUR' : 'symbol' : '1.2-2' }}
+                  } @else {
+                    Even
+                  }
+                </span>
+              }
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        }
+
+        @if (bills().length === 0) {
+          <p class="empty">No bills yet. Create your first bill on the left.</p>
+        }
+      </div>
+    </section>
+  </main>
+</div>

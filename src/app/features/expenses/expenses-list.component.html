@@ -1,0 +1,74 @@
+<div class="history-page">
+  <header class="history-head">
+    <div>
+      <h1>History</h1>
+      @if (currentBill(); as bill) {
+        <p>All shared purchases for "{{ bill.title }}" with payer and amount.</p>
+      } @else {
+        <p>No bill selected yet.</p>
+      }
+    </div>
+    @if (currentBill()) {
+      <a routerLink="/app/expenses/new" class="cta">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+    } @else {
+      <a routerLink="/app/bills" class="cta">
+        <span class="material-symbols-outlined">add</span>
+        Add Bill
+      </a>
+    }
+  </header>
+
+  @if (currentBill()) {
+    <section class="history-card">
+      <div class="row header">
+        <span>Date</span>
+        <span>Game</span>
+        <span>Paid</span>
+        <span>Loaned</span>
+        <span>Type</span>
+        <span>Actions</span>
+      </div>
+      @for (expense of expenses(); track expense.id) {
+        <div class="row">
+          <span>{{ expense.expenseDate }}</span>
+          <div class="game">
+            <strong>{{ expense.gameTitle }}</strong>
+            <small>{{ expense.category || 'Spelletjes' }}</small>
+          </div>
+          <div class="money-col">
+            <small>{{ paidLabel(expense) }}</small>
+            <strong>EUR {{ expense.amount | number : '1.2-2' }}</strong>
+          </div>
+          <div class="money-col">
+            <small>{{ loanedLabel(expense) }}</small>
+            <strong [class.loan-positive]="didCurrentUserPay(expense)" [class.loan-negative]="!didCurrentUserPay(expense)">
+              EUR {{ loanedAmount(expense) | number : '1.2-2' }}
+            </strong>
+          </div>
+          <span class="pill" [class.manual]="expense.source === 'manual'">{{ expense.source }}</span>
+          <div class="actions">
+            @if (canDelete(expense)) {
+              <button
+                type="button"
+                class="delete-btn"
+                [disabled]="deletingExpenseId() === expense.id"
+                (click)="deleteExpense(expense)"
+                title="Delete expense"
+                aria-label="Delete expense"
+              >
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  } @else {
+    <section class="history-card empty-card">
+      <p>Create a bill first. Then history will only show expenses for that bill.</p>
+    </section>
+  }
+</div>

@@ -1,0 +1,27 @@
+:root {
+  --x-primary: #7a7a10;
+  --x-bg-light: #f8f8f6;
+  --x-bg-dark: #212111;
+  --x-text-strong: #1f2418;
+  --x-text-muted: #66735e;
+  --x-border: #dce2d0;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  color: var(--x-text-strong);
+  background: var(--x-bg-light);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top left, #f3f4ea 0%, #f7f8f3 45%, #f2f5ec 100%);
+  color: var(--x-text-strong);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}

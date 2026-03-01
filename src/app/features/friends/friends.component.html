@@ -1,0 +1,58 @@
+<div class="friends-page">
+  <header class="friends-head">
+    <div>
+      <h1>Friends</h1>
+      <p>Overview of friends and the bills you currently share.</p>
+    </div>
+    <a routerLink="/app/bills" class="cta">
+      <span class="material-symbols-outlined">receipt_long</span>
+      Manage Bills
+    </a>
+  </header>
+
+  @if (friends().length > 0) {
+    <section class="friends-grid">
+      @for (friend of friends(); track friend.key) {
+        <article class="friend-card" [class.active-context]="friend.includesCurrentBill">
+          <div class="top">
+            <div class="avatar">{{ friend.friendName.slice(0, 1).toUpperCase() }}</div>
+            <div class="meta">
+              <h2>{{ friend.friendName }}</h2>
+              <p>{{ friend.contact }}</p>
+            </div>
+            @if (friend.includesCurrentBill) {
+              <span class="focus">Current bill</span>
+            }
+          </div>
+
+          <div class="stats">
+            <div>
+              <small>Shared bills</small>
+              <strong>{{ friend.billCount }}</strong>
+            </div>
+            <div>
+              <small>Latest bill</small>
+              <strong>{{ friend.latestBillTitle }}</strong>
+            </div>
+            <div>
+              <small>Updated</small>
+              <strong>{{ friend.latestBillDate | date : 'MMM d, y' }}</strong>
+            </div>
+          </div>
+
+          <div class="tags">
+            @for (billName of friend.recentBills; track billName) {
+              <span>{{ billName }}</span>
+            }
+          </div>
+        </article>
+      }
+    </section>
+  } @else {
+    <section class="empty">
+      <h2>No friends yet</h2>
+      <p>Create your first bill and invite or select a friend to populate this page.</p>
+      <a routerLink="/app/bills" class="cta">Add first bill</a>
+    </section>
+  }
+</div>
