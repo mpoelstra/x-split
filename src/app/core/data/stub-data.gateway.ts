@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, switchMap } from 'rxjs';
 import {
@@ -13,7 +13,7 @@ import { IDataGateway } from './data-gateway';
 
 @Injectable()
 export class StubDataGateway implements IDataGateway {
-  constructor(private readonly http: HttpClient) {}
+  private readonly http = inject(HttpClient);
 
   getCurrentGroup(): Observable<Group> {
     return this.http.get<Group>('/api/groups/current');

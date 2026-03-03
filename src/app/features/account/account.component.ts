@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { APP_ENV } from '../../core/env/app-env.token';
 import { AuthService } from '../../core/auth/auth.service';
 import { ExpenseService } from '../../core/data/expense.service';
@@ -43,7 +44,7 @@ export class AccountComponent {
     this.avatarLoadFailed = true;
   }
 
-  adminResetData(): void {
+  async adminResetData(): Promise<void> {
     if (!this.isAdmin() || this.adminResetBusy()) {
       return;
     }
@@ -57,14 +58,11 @@ export class AccountComponent {
 
     this.adminResetBusy.set(true);
     this.adminResetDone.set(false);
-    this.expenseService.adminResetData().subscribe({
-      next: () => {
-        this.adminResetBusy.set(false);
-        this.adminResetDone.set(true);
-      },
-      error: () => {
-        this.adminResetBusy.set(false);
-      }
-    });
+    try {
+      await firstValueFrom(this.expenseService.adminResetData());
+      this.adminResetDone.set(true);
+    } finally {
+      this.adminResetBusy.set(false);
+    }
   }
 }

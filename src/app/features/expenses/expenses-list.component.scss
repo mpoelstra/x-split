@@ -6,7 +6,7 @@
 .history-head {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 12px;
 
   h1 {
@@ -22,6 +22,43 @@
     color: #8d9989;
     font-size: 0.88rem;
   }
+}
+
+.head-main {
+  display: grid;
+  gap: 10px;
+  flex: 1;
+}
+
+.head-action {
+  display: flex;
+  align-items: flex-end;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filter-input,
+.sort-select {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(79, 88, 98, 0.55);
+  background: rgba(31, 39, 48, 0.9);
+  color: #dce2d4;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.filter-input {
+  min-width: 260px;
+}
+
+.sort-select {
+  min-width: 170px;
 }
 
 .cta {
@@ -68,6 +105,15 @@
   border-top: none;
   font-weight: 700;
   color: #9eabba;
+}
+
+.row.empty-row {
+  grid-template-columns: 1fr;
+
+  span {
+    color: #9aa7b5;
+    font-size: 0.9rem;
+  }
 }
 
 .game {
@@ -161,6 +207,20 @@
   .history-head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .head-action {
+    align-items: flex-start;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .filter-input,
+  .sort-select {
+    width: 100%;
+    min-width: 0;
   }
 
   .history-head h1 {

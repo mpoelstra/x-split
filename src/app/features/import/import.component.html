@@ -10,7 +10,12 @@
   <section class="panel upload-panel">
     <h2>1) Upload CSV</h2>
     <label class="file-input">
-      <input type="file" accept=".csv,text/csv" (change)="onCsvFileChange($event)" />
+      <input
+        type="file"
+        accept=".csv,text/csv"
+        aria-label="Select Splitwise CSV file"
+        (change)="onCsvFileChange($event)"
+      />
       <span>Select CSV file</span>
     </label>
 
@@ -19,15 +24,15 @@
     }
 
     @if (parseError()) {
-      <p class="error">{{ parseError() }}</p>
+      <p class="error" role="alert">{{ parseError() }}</p>
     }
 
     @if (parsedRows().length > 0) {
-      <p class="success">Parsed {{ parsedRows().length }} expense rows.</p>
+      <p class="success" role="status" aria-live="polite">Parsed {{ parsedRows().length }} expense rows.</p>
     }
   </section>
 
-  <section class="panel" [ngClass]="{ disabled: parsedRows().length === 0 }">
+  <section class="panel" [class.disabled]="parsedRows().length === 0">
     <h2>2) Select Bill</h2>
     @if (bills().length > 0) {
       <select [value]="selectedBillId()" (change)="onBillChange($event)">
@@ -61,7 +66,7 @@
     }
   </section>
 
-  <section class="panel" [ngClass]="{ disabled: participantHeaders().length === 0 }">
+  <section class="panel" [class.disabled]="participantHeaders().length === 0">
     <h2>3) Map CSV users to app users</h2>
     <div class="mapping-grid">
       @for (header of participantHeaders(); track header) {
@@ -69,7 +74,7 @@
           <label>{{ header }}</label>
           <select
             [value]="headerMapping()[header] || ''"
-            (change)="onMappingChange(header, ($any($event.target).value))"
+            (change)="onMappingChange(header, $event)"
           >
             <option value="">Select member...</option>
             @for (member of memberOptions(); track member.id) {
@@ -81,7 +86,7 @@
     </div>
   </section>
 
-  <section class="panel" [ngClass]="{ disabled: parsedRows().length === 0 }">
+  <section class="panel" [class.disabled]="parsedRows().length === 0">
     <h2>4) Preview + Import</h2>
     <div class="preview-stats">
       <div>
@@ -107,7 +112,7 @@
     </button>
 
     @if (result(); as done) {
-      <div class="result">
+      <div class="result" role="status" aria-live="polite">
         <strong>Import done</strong>
         <p>Inserted: {{ done.inserted }} | Skipped: {{ done.skipped }} | Failed: {{ done.failed }}</p>
       </div>

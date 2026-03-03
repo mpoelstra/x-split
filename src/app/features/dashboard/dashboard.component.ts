@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CurrencyPipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { BalanceSummary, Bill, Expense, Group } from '../../core/models/domain.models';
@@ -18,7 +18,6 @@ import { APP_ENV } from '../../core/env/app-env.token';
 export class DashboardComponent {
   private readonly expenseService = inject(ExpenseService);
   private readonly authService = inject(AuthService);
-  private readonly http = inject(HttpClient);
   private readonly env = inject(APP_ENV);
 
   readonly user = this.authService.user;
@@ -32,7 +31,8 @@ export class DashboardComponent {
     this.expenses().reduce((sum, expense) => sum + expense.amount, 0)
   );
 
-  readonly recentActivity = computed(() => this.expenses().slice(0, 5));
+  readonly recentActivity = computed(() => this.expenses().slice(0, 20));
+  readonly currencyCode = computed(() => this.expenses()[0]?.currency || 'EUR');
 
   readonly myBalance = computed(() => {
     const me = this.user();
@@ -50,36 +50,48 @@ export class DashboardComponent {
   });
 
   constructor() {
-    this.reload();
-    this.expenseService.billSelectionChanged$
+    this.expenseService.getCurrentGroup()
       .pipe(takeUntilDestroyed())
-      .subscribe(() => this.reload());
-  }
-
-  reload(): void {
-    this.expenseService.getCurrentGroup().subscribe({
+      .subscribe({
       next: (group) => this.group.set(group),
       error: () => this.group.set(null)
     });
-    this.expenseService.getCurrentBill().subscribe({
+    this.expenseService.getCurrentBill()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (bill) => this.currentBill.set(bill),
       error: () => this.currentBill.set(null)
     });
-    this.expenseService.getExpenses().subscribe({
+    this.expenseService.getExpenses()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (expenses) => this.expenses.set(expenses),
       error: () => this.expenses.set([])
     });
-    this.expenseService.getBalances().subscribe({
+    this.expenseService.getBalances()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (balances) => this.balances.set(balances),
       error: () => this.balances.set([])
     });
   }
 
-  resetDemoData(): void {
-    this.http.post('/api/reset', {}).subscribe(() => this.reload());
+  async resetDemoData(): Promise<void> {
+    await firstValueFrom(this.expenseService.adminResetData());
   }
 
   payerName(memberId: string): string {
     return this.group()?.members.find((member) => member.id === memberId)?.displayName ?? 'Member';
+  }
+
+  paidByCurrentUser(expense: Expense): boolean {
+    const group = this.group();
+    const me = this.user();
+    if (!group || !me) {
+      return false;
+    }
+
+    const meMember = group.members.find((member) => member.profileId === me.id);
+    return meMember?.id === expense.paidByMemberId;
   }
 }

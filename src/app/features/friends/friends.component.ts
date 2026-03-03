@@ -67,18 +67,15 @@ export class FriendsComponent {
   });
 
   constructor() {
-    this.reload();
-    this.expenseService.billSelectionChanged$
+    this.expenseService.getBills()
       .pipe(takeUntilDestroyed())
-      .subscribe(() => this.reload());
-  }
-
-  private reload(): void {
-    this.expenseService.getBills().subscribe({
+      .subscribe({
       next: (bills) => this.bills.set(bills),
       error: () => this.bills.set([])
     });
-    this.expenseService.getCurrentBill().subscribe({
+    this.expenseService.getCurrentBill()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (bill) => this.currentBill.set(bill),
       error: () => this.currentBill.set(null)
     });

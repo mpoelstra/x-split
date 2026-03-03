@@ -1,10 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { Bill, Expense, Group } from '../../core/models/domain.models';
+
+type ExpenseSort = 'date_desc' | 'title_asc' | 'title_desc' | 'amount_asc' | 'amount_desc';
 
 @Component({
     selector: 'app-expenses-list',
@@ -21,24 +24,54 @@ export class ExpensesListComponent {
   readonly currentBill = signal<Bill | null>(null);
   readonly expenses = signal<Expense[]>([]);
   readonly deletingExpenseId = signal<string | null>(null);
+  readonly query = signal('');
+  readonly sortBy = signal<ExpenseSort>('date_desc');
+  readonly filteredExpenses = computed(() => {
+    const query = this.query().trim().toLowerCase();
+    const sorted = [...this.expenses()];
+
+    switch (this.sortBy()) {
+      case 'title_asc':
+        sorted.sort((a, b) => a.gameTitle.localeCompare(b.gameTitle));
+        break;
+      case 'title_desc':
+        sorted.sort((a, b) => b.gameTitle.localeCompare(a.gameTitle));
+        break;
+      case 'amount_asc':
+        sorted.sort((a, b) => a.amount - b.amount);
+        break;
+      case 'amount_desc':
+        sorted.sort((a, b) => b.amount - a.amount);
+        break;
+      case 'date_desc':
+      default:
+        sorted.sort((a, b) => b.expenseDate.localeCompare(a.expenseDate));
+        break;
+    }
+
+    if (!query) {
+      return sorted;
+    }
+
+    return sorted.filter((expense) => expense.gameTitle.toLowerCase().includes(query));
+  });
 
   constructor() {
-    this.expenseService.getCurrentGroup().subscribe({
+    this.expenseService.getCurrentGroup()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (group) => this.group.set(group),
       error: () => this.group.set(null)
     });
-    this.reload();
-    this.expenseService.billSelectionChanged$
+    this.expenseService.getCurrentBill()
       .pipe(takeUntilDestroyed())
-      .subscribe(() => this.reload());
-  }
-
-  private reload(): void {
-    this.expenseService.getCurrentBill().subscribe({
+      .subscribe({
       next: (bill) => this.currentBill.set(bill),
       error: () => this.currentBill.set(null)
     });
-    this.expenseService.getExpenses().subscribe({
+    this.expenseService.getExpenses()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (items) => this.expenses.set(items),
       error: () => this.expenses.set([])
     });
@@ -86,7 +119,7 @@ export class ExpensesListComponent {
     return expense.createdByProfileId === me.id;
   }
 
-  deleteExpense(expense: Expense): void {
+  async deleteExpense(expense: Expense): Promise<void> {
     if (!this.canDelete(expense) || this.deletingExpenseId()) {
       return;
     }
@@ -97,10 +130,21 @@ export class ExpensesListComponent {
     }
 
     this.deletingExpenseId.set(expense.id);
-    this.expenseService.deleteExpense(expense.id).subscribe({
-      next: () => this.deletingExpenseId.set(null),
-      error: () => this.deletingExpenseId.set(null)
-    });
+    try {
+      await firstValueFrom(this.expenseService.deleteExpense(expense.id));
+    } finally {
+      this.deletingExpenseId.set(null);
+    }
+  }
+
+  onQueryChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.query.set(input.value);
+  }
+
+  onSortChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.sortBy.set(select.value as ExpenseSort);
   }
 
   private memberName(memberId: string): string {

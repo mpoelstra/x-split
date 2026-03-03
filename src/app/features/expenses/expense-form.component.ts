@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { Bill, Group } from '../../core/models/domain.models';
 
@@ -80,12 +81,9 @@ export class ExpenseFormComponent {
   }
 
   constructor() {
-    this.loadCurrentBill();
-    this.expenseService.billSelectionChanged$
+    this.expenseService.getCurrentGroup()
       .pipe(takeUntilDestroyed())
-      .subscribe(() => this.loadCurrentBill());
-
-    this.expenseService.getCurrentGroup().subscribe({
+      .subscribe({
       next: (group) => {
         this.group.set(group);
         if (!this.form.controls.paidByMemberId.value && group.members.length > 0) {
@@ -94,10 +92,9 @@ export class ExpenseFormComponent {
       },
       error: () => this.group.set(null)
     });
-  }
-
-  private loadCurrentBill(): void {
-    this.expenseService.getCurrentBill().subscribe({
+    this.expenseService.getCurrentBill()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: async (bill) => {
         this.currentBill.set(bill);
         if (!bill) {
@@ -127,14 +124,11 @@ export class ExpenseFormComponent {
       amount: Number(this.form.controls.amount.value)
     };
 
-    this.expenseService.addExpense(payload).subscribe({
-      next: async () => {
-        this.submitting.set(false);
-        await this.router.navigateByUrl('/app/dashboard');
-      },
-      error: () => {
-        this.submitting.set(false);
-      }
-    });
+    try {
+      await firstValueFrom(this.expenseService.addExpense(payload));
+      await this.router.navigateByUrl('/app/dashboard');
+    } finally {
+      this.submitting.set(false);
+    }
   }
 }

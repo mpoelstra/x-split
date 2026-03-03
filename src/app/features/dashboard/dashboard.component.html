@@ -5,9 +5,9 @@
       <p class="bill-line">Bill: {{ bill.title }} · with {{ bill.friendName }}</p>
       <p [class.positive]="myBalance() > 0" [class.negative]="myBalance() < 0">
         @if (myBalance() > 0) {
-          You are owed {{ myBalance() | currency : 'USD' : 'symbol' : '1.2-2' }}
+          You are owed {{ myBalance() | currency : currencyCode() : 'symbol' : '1.2-2' }}
         } @else if (myBalance() < 0) {
-          You owe {{ (myBalance() * -1) | currency : 'USD' : 'symbol' : '1.2-2' }}
+          You owe {{ (myBalance() * -1) | currency : currencyCode() : 'symbol' : '1.2-2' }}
         } @else {
           You are settled up
         }
@@ -30,12 +30,12 @@
     <article>
       <p>Total Balance</p>
       <strong class="positive">
-        {{ myBalance() >= 0 ? '+' : '' }}{{ myBalance() | currency : 'USD' : 'symbol' : '1.2-2' }}
+        {{ myBalance() >= 0 ? '+' : '' }}{{ myBalance() | currency : currencyCode() : 'symbol' : '1.2-2' }}
       </strong>
     </article>
     <article>
       <p>Total Expenses</p>
-      <strong>{{ totalExpenses() | currency : 'USD' : 'symbol' : '1.2-2' }}</strong>
+      <strong>{{ totalExpenses() | currency : currencyCode() : 'symbol' : '1.2-2' }}</strong>
     </article>
     <article>
       <p>Active Shares</p>
@@ -55,7 +55,9 @@
             <p>{{ payerName(expense.paidByMemberId) }} paid for '{{ expense.gameTitle }}'</p>
             <small>{{ expense.expenseDate }}</small>
           </div>
-          <strong>+{{ expense.amount / 2 | currency : expense.currency : 'symbol' : '1.2-2' }}</strong>
+          <strong [class.amount-own]="paidByCurrentUser(expense)" [class.amount-other]="!paidByCurrentUser(expense)">
+            {{ expense.amount | currency : expense.currency : 'symbol' : '1.2-2' }}
+          </strong>
         </div>
       }
     }

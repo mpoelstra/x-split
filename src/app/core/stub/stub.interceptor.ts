@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
   HttpEvent,
   HttpHandler,
@@ -11,7 +11,7 @@ import { StubStoreService } from './stub-store.service';
 
 @Injectable()
 export class StubInterceptor implements HttpInterceptor {
-  constructor(private readonly store: StubStoreService) {}
+  private readonly store = inject(StubStoreService);
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     if (!req.url.startsWith('/api/')) {

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
@@ -36,7 +35,7 @@ interface ImportMemberOption {
 
 @Component({
   selector: 'app-import',
-  imports: [RouterLink, NgClass],
+  imports: [RouterLink],
   templateUrl: './import.component.html',
   styleUrl: './import.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -120,18 +119,15 @@ export class ImportComponent {
   readonly preview = computed(() => this.buildImportPlan());
 
   constructor() {
-    this.loadInitialData();
-    this.expenseService.billSelectionChanged$
+    this.expenseService.getCurrentGroup()
       .pipe(takeUntilDestroyed())
-      .subscribe(() => this.loadInitialData());
-  }
-
-  private loadInitialData(): void {
-    this.expenseService.getCurrentGroup().subscribe({
+      .subscribe({
       next: (group) => this.group.set(group),
       error: () => this.group.set(null)
     });
-    this.expenseService.getBills().subscribe({
+    this.expenseService.getBills()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (bills) => {
         this.bills.set(bills);
         if (!this.selectedBillId() && bills.length > 0) {
@@ -140,7 +136,9 @@ export class ImportComponent {
       },
       error: () => this.bills.set([])
     });
-    this.expenseService.getCurrentBill().subscribe({
+    this.expenseService.getCurrentBill()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (bill) => {
         if (bill) {
           this.selectedBillId.set(bill.id);
@@ -215,13 +213,14 @@ export class ImportComponent {
         })
       );
       this.selectedBillId.set(bill.id);
-      this.loadInitialData();
     } finally {
       this.creatingBill.set(false);
     }
   }
 
-  onMappingChange(csvHeader: string, memberId: string): void {
+  onMappingChange(csvHeader: string, event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const memberId = select.value;
     const next = { ...this.headerMapping() };
     next[csvHeader] = memberId;
     this.headerMapping.set(next);
@@ -268,7 +267,6 @@ export class ImportComponent {
       });
 
       this.headerMapping.set(resolvedMapping);
-      this.loadInitialData();
     } finally {
       this.importing.set(false);
     }

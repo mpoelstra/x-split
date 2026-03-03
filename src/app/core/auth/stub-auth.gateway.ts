@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, firstValueFrom, Observable } from 'rxjs';
 import { IAuthGateway } from './auth-gateway';
@@ -6,9 +6,8 @@ import { UserProfile } from '../models/domain.models';
 
 @Injectable()
 export class StubAuthGateway implements IAuthGateway {
+  private readonly http = inject(HttpClient);
   private readonly userSubject = new BehaviorSubject<UserProfile | null>(null);
-
-  constructor(private readonly http: HttpClient) {}
 
   user$(): Observable<UserProfile | null> {
     return this.userSubject.asObservable();

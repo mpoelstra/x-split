@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { Bill, Group } from '../../core/models/domain.models';
+import { BalanceSummary, Bill, Group } from '../../core/models/domain.models';
 
 type BillTone = 'owed' | 'owe' | 'even';
 
@@ -22,7 +23,7 @@ export class AppShellComponent {
   readonly group = signal<Group | null>(null);
   readonly bills = signal<Bill[]>([]);
   readonly currentBill = signal<Bill | null>(null);
-  readonly currentBalance = signal(0);
+  readonly balances = signal<BalanceSummary[]>([]);
   readonly switchingBill = signal(false);
   readonly avatarLoadFailed = signal(false);
   readonly userDisplayName = computed(() => this.user()?.displayName || 'Account');
@@ -34,6 +35,20 @@ export class AppShellComponent {
     }
 
     return source.slice(0, 2).toUpperCase();
+  });
+  readonly currentBalance = computed(() => {
+    const group = this.group();
+    const me = this.user();
+    if (!group || !me) {
+      return 0;
+    }
+
+    const member = group.members.find((entry) => entry.profileId === me.id);
+    if (!member) {
+      return 0;
+    }
+
+    return this.balances().find((entry) => entry.memberId === member.id)?.balance ?? 0;
   });
   readonly billTone = computed<BillTone>(() => {
     const value = this.currentBalance();
@@ -48,47 +63,33 @@ export class AppShellComponent {
   readonly billAmount = computed(() => Math.round(Math.abs(this.currentBalance()) * 100) / 100);
 
   constructor() {
-    this.reloadBills();
-    this.expenseService.billSelectionChanged$
+    this.expenseService.getCurrentGroup()
       .pipe(takeUntilDestroyed())
-      .subscribe(() => this.reloadBills());
-  }
-
-  reloadBills(): void {
-    this.expenseService.getCurrentGroup().subscribe({
+      .subscribe({
       next: (group) => this.group.set(group),
       error: () => this.group.set(null)
     });
-    this.expenseService.getBills().subscribe({
+    this.expenseService.getBills()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (bills) => this.bills.set(bills),
       error: () => this.bills.set([])
     });
-    this.expenseService.getCurrentBill().subscribe({
+    this.expenseService.getCurrentBill()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (bill) => this.currentBill.set(bill),
       error: () => this.currentBill.set(null)
     });
-    this.expenseService.getBalances().subscribe({
-      next: (balances) => {
-        const group = this.group();
-        const me = this.user();
-        if (!group || !me) {
-          this.currentBalance.set(0);
-          return;
-        }
-
-        const member = group.members.find((entry) => entry.profileId === me.id);
-        if (!member) {
-          this.currentBalance.set(0);
-          return;
-        }
-
-        this.currentBalance.set(balances.find((entry) => entry.memberId === member.id)?.balance ?? 0);
-      },
-      error: () => this.currentBalance.set(0)
+    this.expenseService.getBalances()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+      next: (balances) => this.balances.set(balances),
+      error: () => this.balances.set([])
     });
   }
 
-  onBillSelect(event: Event): void {
+  async onBillSelect(event: Event): Promise<void> {
     const select = event.target as HTMLSelectElement;
     const billId = select.value;
     if (!billId || billId === this.currentBill()?.id) {
@@ -96,16 +97,11 @@ export class AppShellComponent {
     }
 
     this.switchingBill.set(true);
-    this.expenseService.setCurrentBill(billId).subscribe({
-      next: (bill) => {
-        this.currentBill.set(bill);
-        this.reloadBills();
-        this.switchingBill.set(false);
-      },
-      error: () => {
-        this.switchingBill.set(false);
-      }
-    });
+    try {
+      await firstValueFrom(this.expenseService.setCurrentBill(billId));
+    } finally {
+      this.switchingBill.set(false);
+    }
   }
 
   onAvatarLoadError(): void {

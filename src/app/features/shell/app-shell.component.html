@@ -18,7 +18,6 @@
 
   <main class="content">
     <header class="content-topbar">
-      <div class="search">Search friends or games...</div>
       <div class="bill-switcher">
         @if (bills().length > 0) {
           <label for="global-bill-select">Current bill</label>
@@ -47,6 +46,7 @@
           <a class="create-bill-link" routerLink="/app/bills">Create first bill</a>
         }
       </div>
+
       <div class="top-actions">
         <a routerLink="/app/account" class="profile-link">
           <span class="profile-name">{{ userDisplayName() }}</span>

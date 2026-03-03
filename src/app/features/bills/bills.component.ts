@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { BalanceSummary, Bill, CreateBillInput, Group } from '../../core/models/domain.models';
@@ -96,19 +97,15 @@ export class BillsComponent {
     });
   }
 
-  selectBill(bill: Bill): void {
-    this.expenseService.setCurrentBill(bill.id).subscribe((selected) => {
-      this.currentBill.set(selected);
-    });
+  async selectBill(bill: Bill): Promise<void> {
+    const selected = await firstValueFrom(this.expenseService.setCurrentBill(bill.id));
+    this.currentBill.set(selected);
   }
 
   async openBill(bill: Bill): Promise<void> {
-    this.expenseService.setCurrentBill(bill.id).subscribe({
-      next: async (selected) => {
-        this.currentBill.set(selected);
-        await this.router.navigateByUrl('/app/dashboard');
-      }
-    });
+    const selected = await firstValueFrom(this.expenseService.setCurrentBill(bill.id));
+    this.currentBill.set(selected);
+    await this.router.navigateByUrl('/app/dashboard');
   }
 
   statusFor(billId: string): BillStatus | null {
@@ -187,21 +184,18 @@ export class BillsComponent {
     }
 
     this.creating.set(true);
-    this.expenseService.createBill(input).subscribe({
-      next: async (bill) => {
-        this.currentBill.set(bill);
-        this.creating.set(false);
-        this.form.reset({
-          title: '',
-          shareMode: 'friend',
-          friendMemberId: this.friendOptions()[0]?.id ?? '',
-          inviteEmail: ''
-        });
-        await this.router.navigateByUrl('/app/dashboard');
-      },
-      error: () => {
-        this.creating.set(false);
-      }
-    });
+    try {
+      const bill = await firstValueFrom(this.expenseService.createBill(input));
+      this.currentBill.set(bill);
+      this.form.reset({
+        title: '',
+        shareMode: 'friend',
+        friendMemberId: this.friendOptions()[0]?.id ?? '',
+        inviteEmail: ''
+      });
+      await this.router.navigateByUrl('/app/dashboard');
+    } finally {
+      this.creating.set(false);
+    }
   }
 }

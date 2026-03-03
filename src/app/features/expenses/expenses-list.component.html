@@ -1,24 +1,50 @@
 <div class="history-page">
   <header class="history-head">
-    <div>
-      <h1>History</h1>
+    <div class="head-main">
+      <div>
+        <h1>Expenses</h1>
+        @if (currentBill(); as bill) {
+          <p>All shared purchases for "{{ bill.title }}" with payer and amount.</p>
+        } @else {
+          <p>No bill selected yet.</p>
+        }
+      </div>
+      <div class="filters" aria-label="Expense filters">
+        <input
+          type="search"
+          class="filter-input"
+          [value]="query()"
+          (input)="onQueryChange($event)"
+          placeholder="Search game title..."
+          aria-label="Search expenses by game title"
+        />
+        <select
+          class="sort-select"
+          [value]="sortBy()"
+          (change)="onSortChange($event)"
+          aria-label="Sort expenses"
+        >
+          <option value="date_desc">Newest first</option>
+          <option value="title_asc">Title A-Z</option>
+          <option value="title_desc">Title Z-A</option>
+          <option value="amount_asc">Amount low-high</option>
+          <option value="amount_desc">Amount high-low</option>
+        </select>
+      </div>
+    </div>
+    <div class="head-action">
       @if (currentBill(); as bill) {
-        <p>All shared purchases for "{{ bill.title }}" with payer and amount.</p>
+        <a routerLink="/app/expenses/new" class="cta">
+          <span class="material-symbols-outlined">add</span>
+          Add Expense
+        </a>
       } @else {
-        <p>No bill selected yet.</p>
+        <a routerLink="/app/bills" class="cta">
+          <span class="material-symbols-outlined">add</span>
+          Add Bill
+        </a>
       }
     </div>
-    @if (currentBill()) {
-      <a routerLink="/app/expenses/new" class="cta">
-        <span class="material-symbols-outlined">add</span>
-        Add Expense
-      </a>
-    } @else {
-      <a routerLink="/app/bills" class="cta">
-        <span class="material-symbols-outlined">add</span>
-        Add Bill
-      </a>
-    }
   </header>
 
   @if (currentBill()) {
@@ -31,7 +57,7 @@
         <span>Type</span>
         <span>Actions</span>
       </div>
-      @for (expense of expenses(); track expense.id) {
+      @for (expense of filteredExpenses(); track expense.id) {
         <div class="row">
           <span>{{ expense.expenseDate }}</span>
           <div class="game">
@@ -63,6 +89,11 @@
               </button>
             }
           </div>
+        </div>
+      }
+      @if (filteredExpenses().length === 0) {
+        <div class="row empty-row">
+          <span>No expenses match your current search/filter.</span>
         </div>
       }
     </section>
