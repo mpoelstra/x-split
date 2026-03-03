@@ -49,9 +49,9 @@
   @if (isAdmin()) {
     <section class="admin-card">
       <h2>Admin</h2>
-      <p>Danger zone: clear app data but keep your admin profile row.</p>
+      <p>Danger zone: clear all app data (groups, bills, expenses) but keep your admin profile row.</p>
       <button type="button" class="danger" [disabled]="adminResetBusy()" (click)="adminResetData()">
-        {{ adminResetBusy() ? 'Resetting...' : 'Reset bills + profiles (keep admin)' }}
+        {{ adminResetBusy() ? 'Resetting...' : 'Reset all app data (keep admin)' }}
       </button>
       @if (adminResetDone()) {
         <small>Reset completed.</small>

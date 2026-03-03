@@ -136,4 +136,53 @@ describe('ExpenseService', () => {
     expect(gateway.getBills).toHaveBeenCalledTimes(1);
     expect(gateway.getExpenses).toHaveBeenCalledTimes(1);
   });
+
+  it('calculates balances using current bill participants when group has extra members', async () => {
+    const groupWithExtraMember: Group = {
+      ...group,
+      members: [
+        ...group.members,
+        { id: 'm3', profileId: 'u3', displayName: 'Lars', role: 'member' }
+      ]
+    };
+
+    const importLikeExpenses: Expense[] = [
+      {
+        ...expense,
+        id: 'e-richard',
+        amount: 100,
+        paidByMemberId: 'm2',
+        netToPayer: 50
+      },
+      {
+        ...expense,
+        id: 'e-mark',
+        amount: 61.3,
+        paidByMemberId: 'm1',
+        netToPayer: 30.65
+      }
+    ];
+
+    const gateway = createGatewaySpy();
+    gateway.getCurrentGroup.and.returnValue(of(groupWithExtraMember));
+    gateway.getExpenses.and.returnValue(of(importLikeExpenses));
+
+    TestBed.configureTestingModule({
+      providers: [
+        ExpenseService,
+        { provide: DATA_GATEWAY, useValue: gateway }
+      ]
+    });
+
+    const service = TestBed.inject(ExpenseService);
+    const balances = await firstValueFrom(service.getBalances().pipe(take(1)));
+
+    const markBalance = balances.find((entry) => entry.memberId === 'm1')?.balance;
+    const richardBalance = balances.find((entry) => entry.memberId === 'm2')?.balance;
+    const extraMemberBalance = balances.find((entry) => entry.memberId === 'm3');
+
+    expect(markBalance).toBe(-19.35);
+    expect(richardBalance).toBe(19.35);
+    expect(extraMemberBalance).toBeUndefined();
+  });
 });

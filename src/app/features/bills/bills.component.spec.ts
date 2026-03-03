@@ -22,8 +22,8 @@ describe('BillsComponent (class-only)', () => {
         id: 'g1',
         name: 'X-Split',
         members: [
-          { id: 'm1', profileId: 'u1', displayName: 'Mark Poelstra', role: 'owner' },
-          { id: 'm2', profileId: 'u2', displayName: 'Andrea', role: 'member' }
+          { id: 'm1', profileId: 'u1', displayName: 'Mark Poelstra', email: 'm.poelstra@gmail.com', role: 'owner' },
+          { id: 'm2', profileId: 'u2', displayName: 'Andrea', email: 'andrea@example.com', role: 'member' }
         ]
       }),
     getBills: () =>
@@ -113,5 +113,57 @@ describe('BillsComponent (class-only)', () => {
     expect(component.billsLoadError()).toBeTrue();
     expect(component.hasLoadError()).toBeTrue();
     expect(component.bills()).toEqual([]);
+  });
+
+  it('shows owner as counterparty when logged-in user is the friend member', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        FormBuilder,
+        {
+          provide: AuthService,
+          useValue: {
+            user: signal({
+              id: 'u2',
+              displayName: 'Lucas Poelstra',
+              email: 'l.poelstra4@gmail.com'
+            }).asReadonly()
+          }
+        },
+        {
+          provide: ExpenseService,
+          useValue: {
+            ...baseExpenseServiceMock,
+            getCurrentBill: () =>
+              of({
+                id: 'b1',
+                groupId: 'g1',
+                title: 'Xbox Games',
+                friendName: 'l.poelstra4',
+                friendMemberId: 'm2',
+                inviteEmail: 'l.poelstra4@gmail.com',
+                createdAt: '2026-03-01T00:00:00Z'
+              })
+          }
+        },
+        {
+          provide: Router,
+          useValue: { navigateByUrl: () => Promise.resolve(true) }
+        }
+      ]
+    });
+
+    const component = TestBed.runInInjectionContext(() => new BillsComponent());
+    const shared = component.sharedWith({
+      id: 'b1',
+      groupId: 'g1',
+      title: 'Xbox Games',
+      friendName: 'l.poelstra4',
+      friendMemberId: 'm2',
+      inviteEmail: 'l.poelstra4@gmail.com',
+      createdAt: '2026-03-01T00:00:00Z'
+    });
+
+    expect(shared.name).toBe('Mark Poelstra');
+    expect(shared.email).toBe('m.poelstra@gmail.com');
   });
 });

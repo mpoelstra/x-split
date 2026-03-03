@@ -46,6 +46,7 @@ describe('DashboardComponent (class-only)', () => {
                 groupId: 'g1',
                 title: 'Xbox Games',
                 friendName: 'Andrea',
+                friendMemberId: 'm2',
                 createdAt: '2026-03-01T00:00:00Z'
               }),
             getExpenses: () =>
@@ -93,6 +94,14 @@ describe('DashboardComponent (class-only)', () => {
     expect(component.totalExpenses()).toBe(16);
     expect(component.myBalance()).toBe(2);
     expect(component.payerName('m2')).toBe('Andrea');
+    expect(component.billCounterpartyName({
+      id: 'b1',
+      groupId: 'g1',
+      title: 'Xbox Games',
+      friendName: 'Andrea',
+      friendMemberId: 'm2',
+      createdAt: '2026-03-01T00:00:00Z'
+    })).toBe('Andrea');
     expect(component.paidByCurrentUser({
       id: 'x',
       groupId: 'g1',
@@ -105,5 +114,19 @@ describe('DashboardComponent (class-only)', () => {
       source: 'manual',
       createdAt: '2026-03-03T00:00:00Z'
     })).toBeTrue();
+
+    userSignal.set({
+      id: 'u2',
+      displayName: 'Lucas Poelstra',
+      email: 'l.poelstra4@gmail.com'
+    });
+    expect(component.billCounterpartyName({
+      id: 'b1',
+      groupId: 'g1',
+      title: 'Xbox Games',
+      friendName: 'l.poelstra4',
+      friendMemberId: 'm2',
+      createdAt: '2026-03-01T00:00:00Z'
+    })).toBe('Mark Poelstra');
   });
 });

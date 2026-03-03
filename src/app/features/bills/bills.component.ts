@@ -15,6 +15,11 @@ interface BillStatus {
   amount: number;
 }
 
+interface BillCounterparty {
+  name: string;
+  email?: string;
+}
+
 @Component({
   selector: 'app-bills',
   imports: [ReactiveFormsModule, CurrencyPipe],
@@ -141,6 +146,37 @@ export class BillsComponent {
 
   statusFor(billId: string): BillStatus | null {
     return this.billStatuses()[billId] ?? null;
+  }
+
+  sharedWith(bill: Bill): BillCounterparty {
+    const group = this.group();
+    const me = this.user();
+    if (!group || !me) {
+      return { name: bill.friendName, email: bill.inviteEmail };
+    }
+
+    const meMember = group.members.find((member) => member.profileId === me.id);
+    if (!meMember) {
+      return { name: bill.friendName, email: bill.inviteEmail };
+    }
+
+    if (bill.friendMemberId) {
+      if (bill.friendMemberId === meMember.id) {
+        const owner = group.members.find((member) => member.role === 'owner' && member.id !== meMember.id);
+        const fallback = group.members.find((member) => member.id !== meMember.id);
+        const counterparty = owner ?? fallback;
+        if (counterparty) {
+          return { name: counterparty.displayName, email: counterparty.email };
+        }
+      } else {
+        const friend = group.members.find((member) => member.id === bill.friendMemberId);
+        if (friend) {
+          return { name: friend.displayName, email: friend.email };
+        }
+      }
+    }
+
+    return { name: bill.friendName, email: bill.inviteEmail };
   }
 
   private validateShareSelection(): boolean {

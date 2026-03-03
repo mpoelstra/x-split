@@ -19,10 +19,12 @@ interface MemberLookupRow {
   profiles: {
     id: string;
     display_name: string;
+    email: string;
   };
 }
 
 interface CurrentMemberRow extends MemberLookupRow {
+  joined_at: string;
   groups: {
     id: string;
     name: string;
@@ -100,41 +102,9 @@ export class SupabaseDataGateway implements IDataGateway {
     }
   }
 
-  private async ensureBootstrapMembership(
+  private async ensureProfileExists(
     user: { id: string; email?: string; user_metadata?: Record<string, unknown> }
-  ): Promise<CurrentMemberRow | null> {
-    const { data: existing, error: existingError } = await this.client
-      .from('group_members')
-      .select('id,role,profiles!inner(id,display_name),groups!inner(id,name)')
-      .eq('profile_id', user.id)
-      .limit(1)
-      .maybeSingle();
-
-    if (existingError) {
-      throw existingError;
-    }
-
-    if (existing) {
-      return existing as unknown as CurrentMemberRow;
-    }
-
-    await this.acceptPendingInvites(user.email);
-
-    const { data: invitedMembership, error: invitedMembershipError } = await this.client
-      .from('group_members')
-      .select('id,role,profiles!inner(id,display_name),groups!inner(id,name)')
-      .eq('profile_id', user.id)
-      .limit(1)
-      .maybeSingle();
-
-    if (invitedMembershipError) {
-      throw invitedMembershipError;
-    }
-
-    if (invitedMembership) {
-      return invitedMembership as unknown as CurrentMemberRow;
-    }
-
+  ): Promise<void> {
     const displayName =
       (user.user_metadata?.['full_name'] as string | undefined) ??
       this.ensureDisplayNameFromEmail(user.email) ??
@@ -147,6 +117,34 @@ export class SupabaseDataGateway implements IDataGateway {
     });
     if (profileError && !isConflictError(profileError)) {
       throw profileError;
+    }
+  }
+
+  private async getLatestMembershipForUser(userId: string): Promise<CurrentMemberRow | null> {
+    const { data, error } = await this.client
+      .from('group_members')
+      .select('id,role,joined_at,profiles!inner(id,display_name),groups!inner(id,name)')
+      .eq('profile_id', userId)
+      .order('joined_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return (data as unknown as CurrentMemberRow | null) ?? null;
+  }
+
+  private async ensureBootstrapMembership(
+    user: { id: string; email?: string; user_metadata?: Record<string, unknown> }
+  ): Promise<CurrentMemberRow | null> {
+    await this.ensureProfileExists(user);
+    await this.acceptPendingInvites(user.email);
+
+    const latestMembership = await this.getLatestMembershipForUser(user.id);
+    if (latestMembership) {
+      return latestMembership;
     }
 
     const groupId = `group-${user.id.slice(0, 8)}`;
@@ -172,18 +170,7 @@ export class SupabaseDataGateway implements IDataGateway {
       throw memberError;
     }
 
-    const { data: createdMembership, error: createdMembershipError } = await this.client
-      .from('group_members')
-      .select('id,role,profiles!inner(id,display_name),groups!inner(id,name)')
-      .eq('profile_id', user.id)
-      .limit(1)
-      .maybeSingle();
-
-    if (createdMembershipError) {
-      throw createdMembershipError;
-    }
-
-    return (createdMembership as unknown as CurrentMemberRow | null) ?? null;
+    return await this.getLatestMembershipForUser(user.id);
   }
 
   getCurrentGroup(): Observable<Group> {
@@ -206,7 +193,7 @@ export class SupabaseDataGateway implements IDataGateway {
         return from(
           this.client
             .from('group_members')
-            .select('id,role,profiles!inner(id,display_name)')
+            .select('id,role,profiles!inner(id,display_name,email)')
             .eq('group_id', groupId)
         ).pipe(
           map(({ data: memberRows, error: memberError }) => {
@@ -218,6 +205,7 @@ export class SupabaseDataGateway implements IDataGateway {
               id: row.id,
               profileId: row.profiles.id,
               displayName: row.profiles.display_name,
+              email: row.profiles.email,
               role: row.role
             }));
 

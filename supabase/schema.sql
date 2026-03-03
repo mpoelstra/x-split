@@ -332,7 +332,18 @@ set search_path = public
 as $$
 declare
   v_user_id uuid := auth.uid();
-  v_email text := lower(coalesce(auth.jwt()->>'email', ''));
+  v_email text := lower(
+    coalesce(
+      auth.jwt()->>'email',
+      (
+        select p.email
+        from public.profiles p
+        where p.id = auth.uid()
+        limit 1
+      ),
+      ''
+    )
+  );
   inserted_count integer := 0;
 begin
   if v_user_id is null or v_email = '' then
@@ -433,17 +444,9 @@ begin
   delete from public.expenses where true;
   delete from public.bills where true;
   delete from public.invites where true;
-
-  update public.groups
-  set created_by = null
-  where created_by is not null
-    and created_by <> v_user_id;
-
-  delete from public.group_members
-  where profile_id <> v_user_id;
-
-  delete from public.profiles
-  where id <> v_user_id;
+  delete from public.group_members where true;
+  delete from public.groups where true;
+  delete from public.profiles where id <> v_user_id;
 end;
 $$;
 

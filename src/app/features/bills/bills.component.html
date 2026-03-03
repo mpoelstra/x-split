@@ -7,11 +7,15 @@
   </header>
 
   @if (currentBill(); as bill) {
+    @let counterparty = sharedWith(bill);
     <section class="active-bill">
       <div>
         <small>Current bill</small>
         <strong>{{ bill.title }}</strong>
-        <p>Shared with {{ bill.friendName }}@if (bill.inviteEmail) { ({{ bill.inviteEmail }}) }</p>
+        <p>
+          Shared with {{ counterparty.name }}
+          @if (counterparty.email) { ({{ counterparty.email }}) }
+        </p>
       </div>
       <button type="button" class="open" (click)="openBill(bill)">
         <span class="material-symbols-outlined">open_in_new</span>
@@ -74,10 +78,11 @@
 
       <div class="bill-list">
         @for (bill of bills(); track bill.id) {
+          @let counterparty = sharedWith(bill);
           <button type="button" class="bill-item" [class.active]="currentBill()?.id === bill.id" (click)="selectBill(bill)">
             <div>
               <strong>{{ bill.title }}</strong>
-              <small>Shared with {{ bill.friendName }}</small>
+              <small>Shared with {{ counterparty.name }}</small>
               @if (statusFor(bill.id); as status) {
                 <span class="status" [class.owed]="status.tone === 'owed'" [class.owe]="status.tone === 'owe'" [class.even]="status.tone === 'even'">
                   @if (status.tone === 'owed') {

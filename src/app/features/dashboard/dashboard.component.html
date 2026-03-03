@@ -2,7 +2,7 @@
   <div>
     <h2>Dashboard</h2>
     @if (currentBill(); as bill) {
-      <p class="bill-line">Bill: {{ bill.title }} · with {{ bill.friendName }}</p>
+      <p class="bill-line">Bill: {{ bill.title }} · with {{ billCounterpartyName(bill) }}</p>
       <p [class.positive]="myBalance() > 0" [class.negative]="myBalance() < 0">
         @if (myBalance() > 0) {
           You are owed {{ myBalance() | currency : currencyCode() : 'symbol' : '1.2-2' }}

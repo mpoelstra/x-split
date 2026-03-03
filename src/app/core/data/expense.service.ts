@@ -64,13 +64,14 @@ export class ExpenseService {
     }),
     shareReplay({ bufferSize: 1, refCount: true })
   );
-  private readonly balances$ = combineLatest([this.currentGroup$, this.expenses$]).pipe(
-    map(([group, expenses]) => {
-      if (group.members.length === 0) {
+  private readonly balances$ = combineLatest([this.currentGroup$, this.currentBill$, this.expenses$]).pipe(
+    map(([group, currentBill, expenses]) => {
+      const balanceMembers = this.resolveBalanceMembers(group, currentBill, expenses);
+      if (balanceMembers.length === 0) {
         return [];
       }
 
-      return calculateBalances(expenses, group.members);
+      return calculateBalances(expenses, balanceMembers);
     }),
     shareReplay({ bufferSize: 1, refCount: true })
   );
@@ -164,5 +165,35 @@ export class ExpenseService {
 
   private expensesRefresh(): void {
     this.expensesRefreshSubject.next(undefined);
+  }
+
+  private resolveBalanceMembers(group: Group, currentBill: Bill | null, expenses: Expense[]): Group['members'] {
+    if (group.members.length <= 2) {
+      return group.members;
+    }
+
+    const participantIds = new Set<string>();
+
+    if (currentBill?.friendMemberId) {
+      participantIds.add(currentBill.friendMemberId);
+    }
+
+    for (const expense of expenses) {
+      participantIds.add(expense.paidByMemberId);
+    }
+
+    const scopedMembers = group.members.filter((member) => participantIds.has(member.id));
+    if (scopedMembers.length >= 2) {
+      return scopedMembers;
+    }
+
+    if (scopedMembers.length === 1) {
+      const fallbackMember = group.members.find((member) => member.id !== scopedMembers[0].id);
+      if (fallbackMember) {
+        return [scopedMembers[0], fallbackMember];
+      }
+    }
+
+    return group.members;
   }
 }

@@ -15,6 +15,7 @@ export interface GroupMember {
   id: string;
   profileId: string;
   displayName: string;
+  email?: string;
   role: 'owner' | 'member';
 }
 

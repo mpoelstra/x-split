@@ -50,7 +50,7 @@ export class AccountComponent {
     }
 
     const confirmed = window.confirm(
-      'This will delete all bills, invites, expenses, and non-admin profiles. Continue?'
+      'This will delete all bills, invites, expenses, groups, memberships, and non-admin profiles. Continue?'
     );
     if (!confirmed) {
       return;

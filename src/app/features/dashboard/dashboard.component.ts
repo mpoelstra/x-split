@@ -104,6 +104,31 @@ export class DashboardComponent {
     return this.memberNameMap().get(memberId) ?? 'Member';
   }
 
+  billCounterpartyName(bill: Bill): string {
+    const group = this.group();
+    const me = this.user();
+    if (!group || !me) {
+      return bill.friendName;
+    }
+
+    const meMember = group.members.find((member) => member.profileId === me.id);
+    if (!meMember) {
+      return bill.friendName;
+    }
+
+    if (bill.friendMemberId) {
+      if (bill.friendMemberId === meMember.id) {
+        const owner = group.members.find((member) => member.role === 'owner' && member.id !== meMember.id);
+        const fallback = group.members.find((member) => member.id !== meMember.id);
+        return owner?.displayName ?? fallback?.displayName ?? bill.friendName;
+      }
+
+      return group.members.find((member) => member.id === bill.friendMemberId)?.displayName ?? bill.friendName;
+    }
+
+    return bill.friendName;
+  }
+
   paidByCurrentUser(expense: Expense): boolean {
     return this.currentMemberId() === expense.paidByMemberId;
   }
