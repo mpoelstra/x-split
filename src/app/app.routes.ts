@@ -47,6 +47,11 @@ export const routes: Routes = [
           import('./features/expenses/expense-form.component').then((m) => m.ExpenseFormComponent)
       },
       {
+        path: 'expenses/:expenseId/edit',
+        loadComponent: () =>
+          import('./features/expenses/expense-edit.component').then((m) => m.ExpenseEditComponent)
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'dashboard'

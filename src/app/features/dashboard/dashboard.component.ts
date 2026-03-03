@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { BalanceSummary, Bill, Expense, Group } from '../../core/models/domain.models';
+import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
 import { APP_ENV } from '../../core/env/app-env.token';
 
 @Component({
@@ -93,5 +94,9 @@ export class DashboardComponent {
 
     const meMember = group.members.find((member) => member.profileId === me.id);
     return meMember?.id === expense.paidByMemberId;
+  }
+
+  expenseGameUrl(expense: Expense): string {
+    return expense.trueAchievementsUrl || trueAchievementsGameUrl(expense.gameTitle);
   }
 }

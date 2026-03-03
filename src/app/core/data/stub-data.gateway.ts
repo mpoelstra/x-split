@@ -7,7 +7,8 @@ import {
   CreateBillInput,
   CreateExpenseInput,
   Expense,
-  Group
+  Group,
+  UpdateExpenseInput
 } from '../models/domain.models';
 import { IDataGateway } from './data-gateway';
 
@@ -56,8 +57,16 @@ export class StubDataGateway implements IDataGateway {
     return this.http.get<Expense[]>('/api/expenses');
   }
 
+  getExpenseById(expenseId: string): Observable<Expense> {
+    return this.http.get<Expense>(`/api/expenses/${expenseId}`);
+  }
+
   createExpense(input: CreateExpenseInput): Observable<Expense> {
     return this.http.post<Expense>('/api/expenses', input);
+  }
+
+  updateExpense(expenseId: string, input: UpdateExpenseInput): Observable<Expense> {
+    return this.http.put<Expense>(`/api/expenses/${expenseId}`, input);
   }
 
   deleteExpense(expenseId: string): Observable<void> {

@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { Bill, Expense, Group } from '../../core/models/domain.models';
+import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
 
 type ExpenseSort = 'date_desc' | 'title_asc' | 'title_desc' | 'amount_asc' | 'amount_desc';
 
@@ -145,6 +146,14 @@ export class ExpensesListComponent {
   onSortChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.sortBy.set(select.value as ExpenseSort);
+  }
+
+  gameUrl(gameTitle: string): string {
+    return trueAchievementsGameUrl(gameTitle);
+  }
+
+  expenseGameUrl(expense: Expense): string {
+    return expense.trueAchievementsUrl || this.gameUrl(expense.gameTitle);
   }
 
   private memberName(memberId: string): string {

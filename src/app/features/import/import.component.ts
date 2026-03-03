@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ExpenseService } from '../../core/data/expense.service';
 import { Bill, CreateExpenseInput, Group } from '../../core/models/domain.models';
+import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
 
 interface ParsedCsvRow {
   line: number;
@@ -338,6 +339,7 @@ export class ImportComponent {
 
       ready.push({
         gameTitle: row.gameTitle,
+        trueAchievementsUrl: trueAchievementsGameUrl(row.gameTitle),
         amount: row.amount,
         paidByMemberId: payerMemberId,
         netToPayer: Math.abs(row.participantValues[payerHeaders[0]] ?? 0),

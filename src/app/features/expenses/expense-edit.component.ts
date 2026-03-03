@@ -1,29 +1,33 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
-import { Bill, Group } from '../../core/models/domain.models';
+import { Bill, Expense, Group } from '../../core/models/domain.models';
 import { calculateNetToPayer } from '../../core/utils/net-to-payer';
 import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
 
 @Component({
-    selector: 'app-expense-form',
-    imports: [ReactiveFormsModule],
-    templateUrl: './expense-form.component.html',
-    styleUrl: './expense-form.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-expense-edit',
+  imports: [ReactiveFormsModule],
+  templateUrl: './expense-edit.component.html',
+  styleUrl: './expense-edit.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ExpenseFormComponent {
+export class ExpenseEditComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly expenseService = inject(ExpenseService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly group = signal<Group | null>(null);
   readonly currentBill = signal<Bill | null>(null);
+  readonly expense = signal<Expense | null>(null);
   readonly submitting = signal(false);
+  private readonly expenseId = this.route.snapshot.paramMap.get('expenseId') ?? '';
   private taUrlManuallyEdited = false;
+  private formPatchedFromExpense = false;
 
   private readonly moneyPattern = /^\d+(\.\d{1,2})?$/;
 
@@ -88,51 +92,64 @@ export class ExpenseFormComponent {
     this.expenseService.getCurrentGroup()
       .pipe(takeUntilDestroyed())
       .subscribe({
-      next: (group) => {
-        this.group.set(group);
-        if (!this.form.controls.paidByMemberId.value && group.members.length > 0) {
-          this.form.controls.paidByMemberId.setValue(group.members[0].id);
-        }
-      },
-      error: () => this.group.set(null)
-    });
+        next: (group) => this.group.set(group),
+        error: () => this.group.set(null)
+      });
     this.expenseService.getCurrentBill()
       .pipe(takeUntilDestroyed())
       .subscribe({
-      next: async (bill) => {
-        this.currentBill.set(bill);
-        if (!bill) {
-          await this.router.navigateByUrl('/app/bills');
+        next: async (bill) => {
+          this.currentBill.set(bill);
+          if (!bill) {
+            await this.router.navigateByUrl('/app/expenses');
+          }
+        },
+        error: async () => {
+          this.currentBill.set(null);
+          await this.router.navigateByUrl('/app/expenses');
         }
-      },
-      error: async () => {
-        this.currentBill.set(null);
-        await this.router.navigateByUrl('/app/bills');
-      }
-    });
+      });
+  }
+
+  async ngOnInit(): Promise<void> {
+    if (!this.expenseId) {
+      await this.router.navigateByUrl('/app/expenses');
+      return;
+    }
+
+    try {
+      const expense = await firstValueFrom(this.expenseService.getExpenseById(this.expenseId));
+      this.expense.set(expense);
+      this.patchForm(expense);
+    } catch {
+      this.expense.set(null);
+      await this.router.navigateByUrl('/app/expenses');
+    }
   }
 
   async goBack(): Promise<void> {
-    await this.router.navigateByUrl('/app/dashboard');
+    await this.router.navigateByUrl('/app/expenses');
   }
 
   async submit(): Promise<void> {
     this.form.markAllAsTouched();
-    if (this.form.invalid) {
+    if (this.form.invalid || !this.expense()) {
       return;
     }
 
     this.submitting.set(true);
+    const amount = Number(this.form.controls.amount.value);
     const payload = {
       ...this.form.getRawValue(),
+      amount,
       trueAchievementsUrl: this.form.controls.trueAchievementsUrl.value.trim() || undefined,
-      amount: Number(this.form.controls.amount.value),
-      netToPayer: calculateNetToPayer(Number(this.form.controls.amount.value))
+      netToPayer: calculateNetToPayer(amount),
+      source: this.expense()?.source
     };
 
     try {
-      await firstValueFrom(this.expenseService.addExpense(payload));
-      await this.router.navigateByUrl('/app/dashboard');
+      await firstValueFrom(this.expenseService.updateExpense(this.expenseId, payload));
+      await this.router.navigateByUrl('/app/expenses');
     } finally {
       this.submitting.set(false);
     }
@@ -169,5 +186,23 @@ export class ExpenseFormComponent {
     }
 
     window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  private patchForm(expense: Expense): void {
+    if (this.formPatchedFromExpense) {
+      return;
+    }
+
+    this.form.controls.gameTitle.setValue(expense.gameTitle);
+    this.form.controls.trueAchievementsUrl.setValue(
+      expense.trueAchievementsUrl || trueAchievementsGameUrl(expense.gameTitle)
+    );
+    this.form.controls.amount.setValue(expense.amount.toFixed(2));
+    this.form.controls.paidByMemberId.setValue(expense.paidByMemberId);
+    this.form.controls.expenseDate.setValue(expense.expenseDate);
+    this.form.controls.currency.setValue(expense.currency);
+    this.form.controls.category.setValue(expense.category || 'Spelletjes');
+    this.taUrlManuallyEdited = Boolean(expense.trueAchievementsUrl);
+    this.formPatchedFromExpense = true;
   }
 }

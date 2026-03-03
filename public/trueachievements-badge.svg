@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 168" role="img" aria-label="TrueAchievements badge">
+  <rect width="168" height="168" fill="#0f1013"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M16 76 A68 68 0 0 1 64 16" stroke="#b9e61d" stroke-width="10"/>
+    <path d="M99 16 A68 68 0 1 1 57 154" stroke="#66666b" stroke-width="10"/>
+  </g>
+  <g stroke="#c7c9cf" stroke-width="8" stroke-linecap="round" fill="none">
+    <path d="M69 53v58"/>
+    <path d="M53 68h24"/>
+    <path d="M88 84h28"/>
+    <path d="M102 84v28"/>
+    <path d="M102 84v-18"/>
+  </g>
+</svg>

@@ -6,9 +6,11 @@ import {
   Expense,
   Group,
   GroupMember,
+  UpdateExpenseInput,
   UserProfile
 } from '../models/domain.models';
 import { calculateBalances } from '../utils/balance-calculator';
+import { trueAchievementsGameUrl } from '../utils/trueachievements-link';
 
 @Injectable({ providedIn: 'root' })
 export class StubStoreService {
@@ -300,8 +302,18 @@ export class StubStoreService {
       .sort((a, b) => b.expenseDate.localeCompare(a.expenseDate));
   }
 
+  getExpenseById(expenseId: string): Expense {
+    const expense = this.expenses.find((entry) => entry.id === expenseId);
+    if (!expense) {
+      throw new Error('Expense not found');
+    }
+
+    return expense;
+  }
+
   addExpense(payload: {
     gameTitle: string;
+    trueAchievementsUrl?: string;
     amount: number;
     paidByMemberId: string;
     expenseDate: string;
@@ -320,6 +332,7 @@ export class StubStoreService {
       billId: activeBill.id,
       createdByProfileId: this.me.id,
       gameTitle: payload.gameTitle,
+      trueAchievementsUrl: payload.trueAchievementsUrl || trueAchievementsGameUrl(payload.gameTitle),
       amount: payload.amount,
       currency: payload.currency,
       paidByMemberId: payload.paidByMemberId,
@@ -331,6 +344,32 @@ export class StubStoreService {
 
     this.expenses = [newExpense, ...this.expenses];
     return newExpense;
+  }
+
+  updateExpense(expenseId: string, payload: UpdateExpenseInput): Expense {
+    const existing = this.expenses.find((entry) => entry.id === expenseId);
+    if (!existing) {
+      throw new Error('Expense not found');
+    }
+
+    if (existing.createdByProfileId !== this.me.id) {
+      throw new Error('You can only edit expenses you added');
+    }
+
+    const updated: Expense = {
+      ...existing,
+      gameTitle: payload.gameTitle,
+      trueAchievementsUrl: payload.trueAchievementsUrl || trueAchievementsGameUrl(payload.gameTitle),
+      amount: payload.amount,
+      paidByMemberId: payload.paidByMemberId,
+      netToPayer: payload.netToPayer,
+      expenseDate: payload.expenseDate,
+      currency: payload.currency,
+      category: payload.category
+    };
+
+    this.expenses = this.expenses.map((entry) => (entry.id === expenseId ? updated : entry));
+    return updated;
   }
 
   removeExpense(expenseId: string): void {

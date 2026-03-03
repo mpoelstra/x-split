@@ -1,17 +1,17 @@
 <div class="purchase-shell">
-  <div class="crumbs">Purchases <span>›</span> Add New Purchase</div>
+  <div class="crumbs">Purchases <span>›</span> Edit Purchase</div>
   <header class="topbar">
     <div class="left">
       <button type="button" class="back" (click)="goBack()">
         <span class="material-symbols-outlined">arrow_back</span>
       </button>
       <div class="titles">
-        <h1>Add New Purchase</h1>
+        <h1>Edit Expense</h1>
         <p>
           @if (currentBill(); as bill) {
             Bill: {{ bill.title }} · with {{ bill.friendName }}
           } @else {
-            Record a new game or DLC to split the costs with your group.
+            Update game details and split info.
           }
         </p>
       </div>
@@ -94,8 +94,8 @@
       </div>
 
       <button type="submit" class="submit" [disabled]="submitting()">
-        <span class="material-symbols-outlined">account_balance_wallet</span>
-        Add to Balance
+        <span class="material-symbols-outlined">save</span>
+        Save Changes
       </button>
     </form>
   </main>

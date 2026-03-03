@@ -6,7 +6,8 @@ import {
   CreateBillInput,
   CreateExpenseInput,
   Expense,
-  Group
+  Group,
+  UpdateExpenseInput
 } from '../models/domain.models';
 import {
   BehaviorSubject,
@@ -121,8 +122,18 @@ export class ExpenseService {
     return this.expenses$;
   }
 
+  getExpenseById(expenseId: string): Observable<Expense> {
+    return this.gateway.getExpenseById(expenseId);
+  }
+
   addExpense(input: CreateExpenseInput): Observable<Expense> {
     return this.gateway.createExpense(input).pipe(
+      tap(() => this.expensesRefresh())
+    );
+  }
+
+  updateExpense(expenseId: string, input: UpdateExpenseInput): Observable<Expense> {
+    return this.gateway.updateExpense(expenseId, input).pipe(
       tap(() => this.expensesRefresh())
     );
   }

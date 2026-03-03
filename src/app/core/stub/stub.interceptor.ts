@@ -65,6 +65,20 @@ export class StubInterceptor implements HttpInterceptor {
       return of(new HttpResponse({ status: 200, body: this.store.getExpenses() }));
     }
 
+    if (req.method === 'GET' && req.url.match(/^\/api\/expenses\/[^/]+$/)) {
+      const expenseId = req.url.replace('/api/expenses/', '');
+      try {
+        return of(new HttpResponse({ status: 200, body: this.store.getExpenseById(expenseId) }));
+      } catch (error) {
+        return of(
+          new HttpResponse({
+            status: 404,
+            body: { message: error instanceof Error ? error.message : 'Unable to load expense' }
+          })
+        );
+      }
+    }
+
     if (req.method === 'POST' && req.url === '/api/expenses') {
       try {
         return of(new HttpResponse({ status: 201, body: this.store.addExpense(req.body as never) }));
@@ -73,6 +87,20 @@ export class StubInterceptor implements HttpInterceptor {
           new HttpResponse({
             status: 400,
             body: { message: error instanceof Error ? error.message : 'Unable to add expense' }
+          })
+        );
+      }
+    }
+
+    if (req.method === 'PUT' && req.url.match(/^\/api\/expenses\/[^/]+$/)) {
+      const expenseId = req.url.replace('/api/expenses/', '');
+      try {
+        return of(new HttpResponse({ status: 200, body: this.store.updateExpense(expenseId, req.body as never) }));
+      } catch (error) {
+        return of(
+          new HttpResponse({
+            status: 400,
+            body: { message: error instanceof Error ? error.message : 'Unable to update expense' }
           })
         );
       }

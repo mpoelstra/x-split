@@ -41,6 +41,7 @@ export interface Expense {
   billId: string;
   createdByProfileId?: string;
   gameTitle: string;
+  trueAchievementsUrl?: string;
   amount: number;
   currency: string;
   paidByMemberId: string;
@@ -53,6 +54,7 @@ export interface Expense {
 
 export interface CreateExpenseInput {
   gameTitle: string;
+  trueAchievementsUrl?: string;
   amount: number;
   paidByMemberId: string;
   netToPayer?: number;
@@ -61,6 +63,8 @@ export interface CreateExpenseInput {
   category?: string;
   source?: 'manual' | 'csv_import';
 }
+
+export interface UpdateExpenseInput extends CreateExpenseInput {}
 
 export interface BalanceSummary {
   memberId: string;

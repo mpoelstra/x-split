@@ -50,6 +50,7 @@
   @if (currentBill()) {
     <section class="history-card">
       <div class="row header">
+        <span class="ta-col-head">TA</span>
         <span>Date</span>
         <span>Game</span>
         <span>Paid</span>
@@ -59,10 +60,26 @@
       </div>
       @for (expense of filteredExpenses(); track expense.id) {
         <div class="row">
+          <div class="ta-col">
+            <a
+              class="ta-link"
+              [href]="expenseGameUrl(expense)"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="'Open ' + expense.gameTitle + ' on TrueAchievements'"
+              title="Open on TrueAchievements"
+            >
+              <img src="/tabadge.png" alt="TrueAchievements" />
+            </a>
+          </div>
           <span>{{ expense.expenseDate }}</span>
           <div class="game">
-            <strong>{{ expense.gameTitle }}</strong>
-            <small>{{ expense.category || 'Spelletjes' }}</small>
+            <strong>
+              <a [href]="expenseGameUrl(expense)" target="_blank" rel="noopener noreferrer">{{ expense.gameTitle }}</a>
+            </strong>
+            @if (expense.category) {
+              <small>{{ expense.category }}</small>
+            }
           </div>
           <div class="money-col">
             <small>{{ paidLabel(expense) }}</small>
@@ -74,9 +91,28 @@
               EUR {{ loanedAmount(expense) | number : '1.2-2' }}
             </strong>
           </div>
-          <span class="pill" [class.manual]="expense.source === 'manual'">{{ expense.source }}</span>
+          <span
+            class="pill type-pill"
+            [class.manual]="expense.source === 'manual'"
+            [class.imported]="expense.source === 'csv_import'"
+            [attr.aria-label]="expense.source === 'manual' ? 'Manual entry' : 'Imported entry'"
+            [attr.title]="expense.source === 'manual' ? 'Manual entry' : 'Imported entry'"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">
+              {{ expense.source === 'manual' ? 'edit_square' : 'upload_file' }}
+            </span>
+            <span class="type-label">{{ expense.source === 'manual' ? 'Manual' : 'Import' }}</span>
+          </span>
           <div class="actions">
             @if (canDelete(expense)) {
+              <a
+                class="edit-btn"
+                [routerLink]="['/app/expenses', expense.id, 'edit']"
+                title="Edit expense"
+                aria-label="Edit expense"
+              >
+                Edit
+              </a>
               <button
                 type="button"
                 class="delete-btn"

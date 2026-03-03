@@ -51,6 +51,7 @@ create table if not exists expenses (
   bill_id uuid not null references bills(id) on delete cascade,
   created_by_profile_id uuid references profiles(id) on delete set null,
   game_title text not null,
+  trueachievements_url text,
   amount numeric(10,2) not null check (amount > 0),
   currency text not null default 'EUR',
   paid_by_member_id text not null references group_members(id),
@@ -66,6 +67,9 @@ alter table expenses
 
 alter table expenses
   add column if not exists created_by_profile_id uuid references profiles(id) on delete set null;
+
+alter table expenses
+  add column if not exists trueachievements_url text;
 
 alter table expenses
   alter column created_by_profile_id set default auth.uid();
@@ -168,6 +172,7 @@ drop policy if exists "members can insert invites" on invites;
 drop policy if exists "members can view expenses" on expenses;
 drop policy if exists "members can insert expenses" on expenses;
 drop policy if exists "creators can delete expenses" on expenses;
+drop policy if exists "creators can update expenses" on expenses;
 
 create policy "users can view profiles in shared groups"
 on profiles for select
@@ -243,6 +248,15 @@ with check (
 create policy "creators can delete expenses"
 on expenses for delete
 using (
+  expenses.created_by_profile_id = auth.uid()
+);
+
+create policy "creators can update expenses"
+on expenses for update
+using (
+  expenses.created_by_profile_id = auth.uid()
+)
+with check (
   expenses.created_by_profile_id = auth.uid()
 );
 

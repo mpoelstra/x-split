@@ -6,7 +6,8 @@ import {
   CreateBillInput,
   CreateExpenseInput,
   Expense,
-  Group
+  Group,
+  UpdateExpenseInput
 } from '../models/domain.models';
 
 export interface IDataGateway {
@@ -17,7 +18,9 @@ export interface IDataGateway {
   setCurrentBill(billId: string): Observable<Bill>;
   ensurePendingInviteMember(billId: string): Observable<string>;
   getExpenses(): Observable<Expense[]>;
+  getExpenseById(expenseId: string): Observable<Expense>;
   createExpense(input: CreateExpenseInput): Observable<Expense>;
+  updateExpense(expenseId: string, input: UpdateExpenseInput): Observable<Expense>;
   deleteExpense(expenseId: string): Observable<void>;
   getBalances(): Observable<BalanceSummary[]>;
   adminResetData(): Observable<void>;

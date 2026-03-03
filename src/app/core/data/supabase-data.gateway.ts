@@ -7,11 +7,13 @@ import {
   CreateExpenseInput,
   Expense,
   Group,
-  GroupMember
+  GroupMember,
+  UpdateExpenseInput
 } from '../models/domain.models';
 import { IDataGateway } from './data-gateway';
 import { calculateBalances } from '../utils/balance-calculator';
 import { SupabaseClientService } from '../supabase/supabase-client.service';
+import { trueAchievementsGameUrl } from '../utils/trueachievements-link';
 
 interface MemberLookupRow {
   id: string;
@@ -29,6 +31,23 @@ interface CurrentMemberRow extends MemberLookupRow {
   };
 }
 
+interface ExpenseRow {
+  id: string;
+  group_id: string;
+  bill_id: string;
+  created_by_profile_id: string | null;
+  game_title: string;
+  trueachievements_url: string | null;
+  amount: number | string;
+  currency: string;
+  paid_by_member_id: string;
+  net_to_payer: number | string | null;
+  expense_date: string;
+  category: string | null;
+  source: 'manual' | 'csv_import' | null;
+  created_at: string;
+}
+
 const isConflictError = (error: unknown): boolean => {
   if (!error || typeof error !== 'object') {
     return false;
@@ -43,6 +62,25 @@ export class SupabaseDataGateway implements IDataGateway {
   private readonly client = inject(SupabaseClientService).client;
   private currentBillId: string | null = null;
   private currentGroupId: string | null = null;
+
+  private mapExpenseRow(row: ExpenseRow): Expense {
+    return {
+      id: row.id,
+      groupId: row.group_id,
+      billId: row.bill_id,
+      createdByProfileId: row.created_by_profile_id ?? undefined,
+      gameTitle: row.game_title,
+      trueAchievementsUrl: row.trueachievements_url ?? undefined,
+      amount: Number(row.amount),
+      currency: row.currency,
+      paidByMemberId: row.paid_by_member_id,
+      netToPayer: row.net_to_payer != null ? Number(row.net_to_payer) : undefined,
+      expenseDate: row.expense_date,
+      category: row.category ?? undefined,
+      source: row.source ?? 'manual',
+      createdAt: row.created_at
+    };
+  }
 
   private ensureDisplayNameFromEmail(email: string | undefined): string {
     if (!email) {
@@ -377,10 +415,10 @@ export class SupabaseDataGateway implements IDataGateway {
   getExpenses(): Observable<Expense[]> {
     const fetchByBillId = (billId: string): Observable<Expense[]> =>
       from(
-        this.client
-          .from('expenses')
-          .select(
-            'id,group_id,bill_id,created_by_profile_id,game_title,amount,currency,paid_by_member_id,net_to_payer,expense_date,category,source,created_at'
+          this.client
+            .from('expenses')
+            .select(
+            'id,group_id,bill_id,created_by_profile_id,game_title,trueachievements_url,amount,currency,paid_by_member_id,net_to_payer,expense_date,category,source,created_at'
           )
           .eq('bill_id', billId)
           .order('expense_date', { ascending: false })
@@ -390,21 +428,7 @@ export class SupabaseDataGateway implements IDataGateway {
             throw error;
           }
 
-          return (data ?? []).map((row) => ({
-            id: row.id as string,
-            groupId: row.group_id as string,
-            billId: row.bill_id as string,
-            createdByProfileId: row.created_by_profile_id as string | undefined,
-            gameTitle: row.game_title as string,
-            amount: Number(row.amount),
-            currency: row.currency as string,
-            paidByMemberId: row.paid_by_member_id as string,
-            netToPayer: row.net_to_payer != null ? Number(row.net_to_payer) : undefined,
-            expenseDate: row.expense_date as string,
-            category: row.category as string | undefined,
-            source: (row.source as 'manual' | 'csv_import') ?? 'manual',
-            createdAt: row.created_at as string
-          } satisfies Expense));
+          return (data ?? []).map((row) => this.mapExpenseRow(row as ExpenseRow));
         })
       );
 
@@ -419,6 +443,26 @@ export class SupabaseDataGateway implements IDataGateway {
         }
 
         return fetchByBillId(currentBill.id);
+      })
+    );
+  }
+
+  getExpenseById(expenseId: string): Observable<Expense> {
+    return from(
+      this.client
+        .from('expenses')
+        .select(
+          'id,group_id,bill_id,created_by_profile_id,game_title,trueachievements_url,amount,currency,paid_by_member_id,net_to_payer,expense_date,category,source,created_at'
+        )
+        .eq('id', expenseId)
+        .single()
+    ).pipe(
+      map(({ data, error }) => {
+        if (error || !data) {
+          throw error ?? new Error('Expense not found');
+        }
+
+        return this.mapExpenseRow(data as ExpenseRow);
       })
     );
   }
@@ -439,6 +483,7 @@ export class SupabaseDataGateway implements IDataGateway {
                   group_id: group.id,
                   bill_id: bill.id,
                   game_title: input.gameTitle,
+                  trueachievements_url: input.trueAchievementsUrl || trueAchievementsGameUrl(input.gameTitle),
                   amount: input.amount,
                   currency: input.currency,
                   paid_by_member_id: input.paidByMemberId,
@@ -448,7 +493,7 @@ export class SupabaseDataGateway implements IDataGateway {
                   source: input.source ?? 'manual'
                 })
                 .select(
-                  'id,group_id,bill_id,created_by_profile_id,game_title,amount,currency,paid_by_member_id,net_to_payer,expense_date,category,source,created_at'
+                  'id,group_id,bill_id,created_by_profile_id,game_title,trueachievements_url,amount,currency,paid_by_member_id,net_to_payer,expense_date,category,source,created_at'
                 )
                 .single()
             );
@@ -460,21 +505,37 @@ export class SupabaseDataGateway implements IDataGateway {
           throw error ?? new Error('Unable to create expense');
         }
 
-        return {
-          id: data.id as string,
-          groupId: data.group_id as string,
-          billId: data.bill_id as string,
-          createdByProfileId: data.created_by_profile_id as string | undefined,
-          gameTitle: data.game_title as string,
-          amount: Number(data.amount),
-          currency: data.currency as string,
-          paidByMemberId: data.paid_by_member_id as string,
-          netToPayer: data.net_to_payer != null ? Number(data.net_to_payer) : undefined,
-          expenseDate: data.expense_date as string,
-          category: data.category as string | undefined,
-          source: (data.source as 'manual' | 'csv_import') ?? 'manual',
-          createdAt: data.created_at as string
-        } satisfies Expense;
+        return this.mapExpenseRow(data as ExpenseRow);
+      })
+    );
+  }
+
+  updateExpense(expenseId: string, input: UpdateExpenseInput): Observable<Expense> {
+    return from(
+      this.client
+        .from('expenses')
+        .update({
+          game_title: input.gameTitle,
+          trueachievements_url: input.trueAchievementsUrl || trueAchievementsGameUrl(input.gameTitle),
+          amount: input.amount,
+          currency: input.currency,
+          paid_by_member_id: input.paidByMemberId,
+          net_to_payer: input.netToPayer,
+          expense_date: input.expenseDate,
+          category: input.category
+        })
+        .eq('id', expenseId)
+        .select(
+          'id,group_id,bill_id,created_by_profile_id,game_title,trueachievements_url,amount,currency,paid_by_member_id,net_to_payer,expense_date,category,source,created_at'
+        )
+        .single()
+    ).pipe(
+      map(({ data, error }) => {
+        if (error || !data) {
+          throw error ?? new Error('Unable to update expense');
+        }
+
+        return this.mapExpenseRow(data as ExpenseRow);
       })
     );
   }

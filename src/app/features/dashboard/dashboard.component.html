@@ -50,9 +50,23 @@
     } @else {
       @for (expense of recentActivity(); track expense.id) {
         <div class="activity-row">
-          <div class="avatar"><span class="material-symbols-outlined">account_circle</span></div>
+          <a
+            class="ta-link ta-link-left"
+            [href]="expenseGameUrl(expense)"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'Open ' + expense.gameTitle + ' on TrueAchievements'"
+            title="Open on TrueAchievements"
+          >
+            <img src="/tabadge.png" alt="TrueAchievements" />
+          </a>
           <div class="meta">
-            <p>{{ payerName(expense.paidByMemberId) }} paid for '{{ expense.gameTitle }}'</p>
+            <p>
+              {{ payerName(expense.paidByMemberId) }} paid for
+              <a class="game-link" [href]="expenseGameUrl(expense)" target="_blank" rel="noopener noreferrer">
+                {{ expense.gameTitle }}
+              </a>
+            </p>
             <small>{{ expense.expenseDate }}</small>
           </div>
           <strong [class.amount-own]="paidByCurrentUser(expense)" [class.amount-other]="!paidByCurrentUser(expense)">
