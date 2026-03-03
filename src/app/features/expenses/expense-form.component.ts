@@ -4,6 +4,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
+import { DEFAULT_EXPENSE_CATEGORY } from '../../core/constants/expense.constants';
 import { Bill, Group } from '../../core/models/domain.models';
 import { calculateNetToPayer } from '../../core/utils/net-to-payer';
 import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
@@ -59,7 +60,7 @@ export class ExpenseFormComponent {
     paidByMemberId: ['', Validators.required],
     expenseDate: [new Date().toISOString().slice(0, 10), Validators.required],
     currency: ['EUR', Validators.required],
-    category: ['Spelletjes']
+    category: [DEFAULT_EXPENSE_CATEGORY]
   });
 
   amountErrorMessage(): string {

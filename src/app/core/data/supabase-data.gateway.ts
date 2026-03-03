@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable, from, map, of, switchMap, tap } from 'rxjs';
 import {
-  BalanceSummary,
   Bill,
   CreateBillInput,
   CreateExpenseInput,
@@ -11,7 +10,6 @@ import {
   UpdateExpenseInput
 } from '../models/domain.models';
 import { IDataGateway } from './data-gateway';
-import { calculateBalances } from '../utils/balance-calculator';
 import { SupabaseClientService } from '../supabase/supabase-client.service';
 import { trueAchievementsGameUrl } from '../utils/trueachievements-link';
 
@@ -549,23 +547,6 @@ export class SupabaseDataGateway implements IDataGateway {
           throw error;
         }
       })
-    );
-  }
-
-  getBalances(): Observable<BalanceSummary[]> {
-    return this.getCurrentGroup().pipe(
-      switchMap((group) =>
-        this.getExpenses().pipe(
-          map((expenses) => {
-            const members: GroupMember[] = group.members;
-            if (members.length === 0) {
-              return [];
-            }
-
-            return calculateBalances(expenses, members);
-          })
-        )
-      )
     );
   }
 

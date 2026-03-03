@@ -121,10 +121,6 @@ export class StubInterceptor implements HttpInterceptor {
       }
     }
 
-    if (req.method === 'GET' && req.url === '/api/balances') {
-      return of(new HttpResponse({ status: 200, body: this.store.getBalances() }));
-    }
-
     if (req.method === 'POST' && req.url === '/api/reset') {
       this.store.reset();
       return of(new HttpResponse({ status: 200, body: { ok: true } }));

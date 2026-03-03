@@ -1,7 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
-  BalanceSummary,
   Bill,
   CreateBillInput,
   CreateExpenseInput,
@@ -22,7 +21,6 @@ export interface IDataGateway {
   createExpense(input: CreateExpenseInput): Observable<Expense>;
   updateExpense(expenseId: string, input: UpdateExpenseInput): Observable<Expense>;
   deleteExpense(expenseId: string): Observable<void>;
-  getBalances(): Observable<BalanceSummary[]>;
   adminResetData(): Observable<void>;
 }
 

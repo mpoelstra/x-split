@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { BalanceSummary, Bill, CreateBillInput, Group } from '../../core/models/domain.models';
@@ -29,11 +29,75 @@ export class BillsComponent {
   private readonly fb = inject(FormBuilder);
 
   readonly user = this.authService.user;
-  readonly group = signal<Group | null>(null);
-  readonly bills = signal<Bill[]>([]);
-  readonly currentBill = signal<Bill | null>(null);
-  readonly balances = signal<BalanceSummary[]>([]);
-  readonly billStatuses = signal<Record<string, BillStatus>>({});
+  readonly groupLoadError = signal(false);
+  readonly billsLoadError = signal(false);
+  readonly currentBillLoadError = signal(false);
+  readonly balancesLoadError = signal(false);
+  readonly hasLoadError = computed(
+    () => this.groupLoadError() || this.billsLoadError() || this.currentBillLoadError() || this.balancesLoadError()
+  );
+  readonly group = toSignal(
+    this.expenseService.getCurrentGroup().pipe(
+      catchError(() => {
+        this.groupLoadError.set(true);
+        return of<Group | null>(null);
+      })
+    ),
+    { initialValue: null }
+  );
+  readonly bills = toSignal(
+    this.expenseService.getBills().pipe(
+      catchError(() => {
+        this.billsLoadError.set(true);
+        return of<Bill[]>([]);
+      })
+    ),
+    { initialValue: [] }
+  );
+  readonly currentBill = toSignal(
+    this.expenseService.getCurrentBill().pipe(
+      catchError(() => {
+        this.currentBillLoadError.set(true);
+        return of<Bill | null>(null);
+      })
+    ),
+    { initialValue: null }
+  );
+  readonly balances = toSignal(
+    this.expenseService.getBalances().pipe(
+      catchError(() => {
+        this.balancesLoadError.set(true);
+        return of<BalanceSummary[]>([]);
+      })
+    ),
+    { initialValue: [] }
+  );
+  readonly billStatuses = computed<Record<string, BillStatus>>(() => {
+    const current = this.currentBill();
+    const group = this.group();
+    const me = this.user();
+    if (!current || !group || !me) {
+      return {};
+    }
+
+    const meMember = group.members.find((member) => member.profileId === me.id);
+    if (!meMember) {
+      return {};
+    }
+
+    const balance = this.balances().find((entry) => entry.memberId === meMember.id)?.balance ?? 0;
+    const amount = Math.round(Math.abs(balance) * 100) / 100;
+    let tone: BillStatusTone = 'even';
+    if (balance > 0.01) {
+      tone = 'owed';
+    } else if (balance < -0.01) {
+      tone = 'owe';
+    }
+
+    return {
+      [current.id]: { tone, amount }
+    };
+  });
   readonly creating = signal(false);
 
   readonly friendOptions = computed(() => {
@@ -54,91 +118,29 @@ export class BillsComponent {
   });
 
   constructor() {
-    this.expenseService.getCurrentGroup().pipe(takeUntilDestroyed()).subscribe({
-      next: (group) => {
-        this.group.set(group);
-        if (this.friendOptions().length > 0) {
-          if (!this.form.controls.friendMemberId.value) {
-            this.form.controls.friendMemberId.setValue(this.friendOptions()[0].id);
-          }
-        } else {
-          this.form.controls.shareMode.setValue('invite');
+    effect(() => {
+      const options = this.friendOptions();
+      if (options.length > 0) {
+        if (!this.form.controls.friendMemberId.value) {
+          this.form.controls.friendMemberId.setValue(options[0].id);
         }
-        this.refreshCurrentBillStatus();
-      },
-      error: () => this.group.set(null)
-    });
-
-    this.expenseService.getBills().pipe(takeUntilDestroyed()).subscribe({
-      next: (bills) => this.bills.set(bills),
-      error: () => this.bills.set([])
-    });
-
-    this.expenseService.getCurrentBill().pipe(takeUntilDestroyed()).subscribe({
-      next: (bill) => {
-        this.currentBill.set(bill);
-        this.refreshCurrentBillStatus();
-      },
-      error: () => {
-        this.currentBill.set(null);
-        this.billStatuses.set({});
-      }
-    });
-
-    this.expenseService.getBalances().pipe(takeUntilDestroyed()).subscribe({
-      next: (balances) => {
-        this.balances.set(balances);
-        this.refreshCurrentBillStatus();
-      },
-      error: () => {
-        this.balances.set([]);
-        this.billStatuses.set({});
+      } else {
+        this.form.controls.shareMode.setValue('invite');
       }
     });
   }
 
   async selectBill(bill: Bill): Promise<void> {
-    const selected = await firstValueFrom(this.expenseService.setCurrentBill(bill.id));
-    this.currentBill.set(selected);
+    await firstValueFrom(this.expenseService.setCurrentBill(bill.id));
   }
 
   async openBill(bill: Bill): Promise<void> {
-    const selected = await firstValueFrom(this.expenseService.setCurrentBill(bill.id));
-    this.currentBill.set(selected);
+    await firstValueFrom(this.expenseService.setCurrentBill(bill.id));
     await this.router.navigateByUrl('/app/dashboard');
   }
 
   statusFor(billId: string): BillStatus | null {
     return this.billStatuses()[billId] ?? null;
-  }
-
-  private refreshCurrentBillStatus(): void {
-    const current = this.currentBill();
-    const group = this.group();
-    const me = this.user();
-    if (!current || !group || !me) {
-      this.billStatuses.set({});
-      return;
-    }
-
-    const meMember = group.members.find((member) => member.profileId === me.id);
-    if (!meMember) {
-      this.billStatuses.set({});
-      return;
-    }
-
-    const balance = this.balances().find((entry) => entry.memberId === meMember.id)?.balance ?? 0;
-    const amount = Math.round(Math.abs(balance) * 100) / 100;
-    let tone: BillStatusTone = 'even';
-    if (balance > 0.01) {
-      tone = 'owed';
-    } else if (balance < -0.01) {
-      tone = 'owe';
-    }
-
-    this.billStatuses.set({
-      [current.id]: { tone, amount }
-    });
   }
 
   private validateShareSelection(): boolean {
@@ -185,8 +187,7 @@ export class BillsComponent {
 
     this.creating.set(true);
     try {
-      const bill = await firstValueFrom(this.expenseService.createBill(input));
-      this.currentBill.set(bill);
+      await firstValueFrom(this.expenseService.createBill(input));
       this.form.reset({
         title: '',
         shareMode: 'friend',

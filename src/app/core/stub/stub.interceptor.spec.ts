@@ -1,7 +1,7 @@
 import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
-import { BalanceSummary, Bill, Expense, Group, UserProfile } from '../models/domain.models';
+import { Bill, Expense, Group, UserProfile } from '../models/domain.models';
 import { StubInterceptor } from './stub.interceptor';
 
 describe('StubInterceptor', () => {
@@ -23,12 +23,12 @@ describe('StubInterceptor', () => {
     expect(me.displayName).toContain('Mark');
   });
 
-  it('returns seeded group and balances', async () => {
+  it('returns seeded group and expenses', async () => {
     const group = await firstValueFrom(http.get<Group>('/api/groups/current'));
-    const balances = await firstValueFrom(http.get<BalanceSummary[]>('/api/balances'));
+    const expenses = await firstValueFrom(http.get<Expense[]>('/api/expenses'));
 
     expect(group.members.length).toBe(2);
-    expect(balances.length).toBe(2);
+    expect(expenses.length).toBeGreaterThan(0);
   });
 
   it('creates expense and returns updated list', async () => {

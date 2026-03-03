@@ -2,7 +2,6 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, switchMap } from 'rxjs';
 import {
-  BalanceSummary,
   Bill,
   CreateBillInput,
   CreateExpenseInput,
@@ -71,10 +70,6 @@ export class StubDataGateway implements IDataGateway {
 
   deleteExpense(expenseId: string): Observable<void> {
     return this.http.delete<void>(`/api/expenses/${expenseId}`);
-  }
-
-  getBalances(): Observable<BalanceSummary[]> {
-    return this.http.get<BalanceSummary[]>('/api/balances');
   }
 
   adminResetData(): Observable<void> {

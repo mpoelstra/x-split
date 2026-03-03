@@ -1,13 +1,13 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { Router } from '@angular/router';
 import { ExpenseFormComponent } from './expense-form.component';
 import { ExpenseService } from '../../core/data/expense.service';
 
 describe('ExpenseFormComponent', () => {
-  let fixture: ComponentFixture<ExpenseFormComponent>;
   let component: ExpenseFormComponent;
-  let addExpenseSpy: jasmine.Spy;
+  let addExpenseSpy: jasmine.Spy<(payload: unknown) => unknown>;
+  let navigateByUrlSpy: jasmine.Spy<(url: string) => Promise<boolean>>;
 
   beforeEach(async () => {
     addExpenseSpy = jasmine.createSpy('addExpense').and.returnValue(
@@ -24,14 +24,13 @@ describe('ExpenseFormComponent', () => {
         createdAt: '2026-03-01T12:00:00Z'
       })
     );
+    navigateByUrlSpy = jasmine.createSpy('navigateByUrl').and.returnValue(Promise.resolve(true));
 
     await TestBed.configureTestingModule({
-      imports: [ExpenseFormComponent],
       providers: [
         {
           provide: ExpenseService,
           useValue: {
-            billSelectionChanged$: of('b1'),
             getCurrentGroup: () =>
               of({
                 id: 'g1',
@@ -52,15 +51,13 @@ describe('ExpenseFormComponent', () => {
         {
           provide: Router,
           useValue: {
-            navigateByUrl: () => Promise.resolve(true)
+            navigateByUrl: navigateByUrlSpy
           }
         }
       ]
-    }).compileComponents();
+    });
 
-    fixture = TestBed.createComponent(ExpenseFormComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    component = TestBed.runInInjectionContext(() => new ExpenseFormComponent());
   });
 
   it('requires game title and positive amount', () => {
@@ -70,15 +67,26 @@ describe('ExpenseFormComponent', () => {
     expect(component.form.invalid).toBeTrue();
   });
 
-  it('submits payload when valid', async () => {
+  it('submits expected normalized payload when valid', async () => {
     component.form.controls.gameTitle.setValue('Halo Infinite');
     component.form.controls.amount.setValue('59.99');
     component.form.controls.paidByMemberId.setValue('m1');
     component.form.controls.expenseDate.setValue('2026-03-01');
+    component.form.controls.trueAchievementsUrl.setValue('   ');
 
     await component.submit();
 
-    expect(addExpenseSpy).toHaveBeenCalled();
+    expect(addExpenseSpy).toHaveBeenCalledWith(jasmine.objectContaining({
+      gameTitle: 'Halo Infinite',
+      amount: 59.99,
+      netToPayer: 30,
+      paidByMemberId: 'm1',
+      expenseDate: '2026-03-01',
+      currency: 'EUR',
+      trueAchievementsUrl: undefined,
+      category: 'Spelletjes'
+    }));
+    expect(navigateByUrlSpy).toHaveBeenCalledWith('/app/dashboard');
   });
 
   it('accepts 9, 9.1, 9.99 and rejects comma or >2 decimals', () => {

@@ -35,7 +35,7 @@ export class ExpenseService {
     switchMap(() => this.gateway.getCurrentGroup()),
     shareReplay({ bufferSize: 1, refCount: true })
   );
-  private readonly bills$ = combineLatest([this.refreshSubject, this.currentGroup$]).pipe(
+  private readonly bills$ = this.currentGroup$.pipe(
     switchMap(() => this.gateway.getBills()),
     shareReplay({ bufferSize: 1, refCount: true })
   );

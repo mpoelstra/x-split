@@ -4,6 +4,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
+import { DEFAULT_EXPENSE_CATEGORY } from '../../core/constants/expense.constants';
 import { Bill, Expense, Group } from '../../core/models/domain.models';
 import { calculateNetToPayer } from '../../core/utils/net-to-payer';
 import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
@@ -63,7 +64,7 @@ export class ExpenseEditComponent implements OnInit {
     paidByMemberId: ['', Validators.required],
     expenseDate: [new Date().toISOString().slice(0, 10), Validators.required],
     currency: ['EUR', Validators.required],
-    category: ['Spelletjes']
+    category: [DEFAULT_EXPENSE_CATEGORY]
   });
 
   amountErrorMessage(): string {
@@ -201,7 +202,7 @@ export class ExpenseEditComponent implements OnInit {
     this.form.controls.paidByMemberId.setValue(expense.paidByMemberId);
     this.form.controls.expenseDate.setValue(expense.expenseDate);
     this.form.controls.currency.setValue(expense.currency);
-    this.form.controls.category.setValue(expense.category || 'Spelletjes');
+    this.form.controls.category.setValue(expense.category || DEFAULT_EXPENSE_CATEGORY);
     this.taUrlManuallyEdited = Boolean(expense.trueAchievementsUrl);
     this.formPatchedFromExpense = true;
   }

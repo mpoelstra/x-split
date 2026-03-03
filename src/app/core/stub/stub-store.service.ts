@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import {
-  BalanceSummary,
   Bill,
   CreateBillInput,
   Expense,
@@ -9,7 +8,6 @@ import {
   UpdateExpenseInput,
   UserProfile
 } from '../models/domain.models';
-import { calculateBalances } from '../utils/balance-calculator';
 import { trueAchievementsGameUrl } from '../utils/trueachievements-link';
 
 @Injectable({ providedIn: 'root' })
@@ -383,10 +381,6 @@ export class StubStoreService {
     }
 
     this.expenses = this.expenses.filter((entry) => entry.id !== expenseId);
-  }
-
-  getBalances(): BalanceSummary[] {
-    return calculateBalances(this.getExpenses(), this.members);
   }
 
   reset(): void {
