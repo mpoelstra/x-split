@@ -27,23 +27,21 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Install dependencies
-        working-directory: web
         run: npm ci
 
       - name: Build app
-        working-directory: web
         run: npm run build -- --base-href "/x-split/"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web/dist/x-split/browser
+          path: dist/x-split/browser
 
   deploy:
     environment:
