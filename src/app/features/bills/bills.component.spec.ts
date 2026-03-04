@@ -23,7 +23,8 @@ describe('BillsComponent (class-only)', () => {
         name: 'X-Split',
         members: [
           { id: 'm1', profileId: 'u1', displayName: 'Mark Poelstra', email: 'm.poelstra@gmail.com', role: 'owner' },
-          { id: 'm2', profileId: 'u2', displayName: 'Andrea', email: 'andrea@example.com', role: 'member' }
+          { id: 'm2', profileId: 'u2', displayName: 'Andrea', email: 'andrea@example.com', role: 'member' },
+          { id: 'm3', profileId: 'u3', displayName: 'richardbooy', email: 'pending+abc123@xsplit.local', role: 'member' }
         ]
       }),
     getBills: () =>
@@ -166,5 +167,34 @@ describe('BillsComponent (class-only)', () => {
 
     expect(shared.name).toBe('Mark Poelstra');
     expect(shared.email).toBe('m.poelstra@gmail.com');
+  });
+
+  it('uses invite email when bill friend points to a pending placeholder member', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        FormBuilder,
+        { provide: AuthService, useValue: authServiceMock },
+        { provide: ExpenseService, useValue: baseExpenseServiceMock },
+        {
+          provide: Router,
+          useValue: { navigateByUrl: () => Promise.resolve(true) }
+        }
+      ]
+    });
+
+    const component = TestBed.runInInjectionContext(() => new BillsComponent());
+    const shared = component.sharedWith({
+      id: 'b-pending',
+      groupId: 'g1',
+      title: 'Shared Xbox Games',
+      friendName: 'richardbooy',
+      friendMemberId: 'm3',
+      inviteEmail: 'richardbooy@gmail.com',
+      createdAt: '2026-03-04T00:00:00Z'
+    });
+
+    expect(component.friendOptions().map((m) => m.id)).toEqual(['m2']);
+    expect(shared.name).toBe('richardbooy');
+    expect(shared.email).toBe('richardbooy@gmail.com');
   });
 });

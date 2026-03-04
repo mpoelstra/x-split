@@ -113,7 +113,7 @@ export class BillsComponent {
       return [];
     }
 
-    return group.members.filter((member) => member.profileId !== me.id);
+    return group.members.filter((member) => member.profileId !== me.id && !this.isPendingMember(member.email));
   });
 
   readonly form = this.fb.nonNullable.group({
@@ -203,6 +203,9 @@ export class BillsComponent {
       } else {
         const friend = group.members.find((member) => member.id === bill.friendMemberId);
         if (friend) {
+          if (this.isPendingMember(friend.email) && bill.inviteEmail) {
+            return { name: bill.friendName, email: bill.inviteEmail };
+          }
           return { name: friend.displayName, email: friend.email };
         }
       }
@@ -266,5 +269,13 @@ export class BillsComponent {
     } finally {
       this.creating.set(false);
     }
+  }
+
+  private isPendingMember(email: string | undefined): boolean {
+    if (!email) {
+      return false;
+    }
+
+    return email.startsWith('pending+') && email.endsWith('@xsplit.local');
   }
 }
