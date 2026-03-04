@@ -131,12 +131,32 @@
   }
 
   a {
-    color: #f0f3ea;
-    text-decoration: none;
+    color: #e5ef9a;
+    text-decoration: underline;
+    text-decoration-color: rgba(137, 147, 17, 0.85);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  a::after {
+    content: '↗';
+    font-size: 0.72em;
+    line-height: 1;
+    opacity: 0.78;
   }
 
   a:hover {
-    text-decoration: underline;
+    color: #f1f7c8;
+    text-decoration-thickness: 2px;
+  }
+
+  a:focus-visible {
+    outline: 2px solid rgba(137, 147, 17, 0.55);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
   small {
@@ -484,6 +504,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .mobile-expenses .expense-top .game strong a::after {
+    display: none;
   }
 
   .mobile-expenses .expense-top .game {
