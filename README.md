@@ -2,6 +2,11 @@
 
 X-Split is a lightweight Splitwise replacement for shared Xbox game purchases.
 
+## Requirements
+
+- Node.js 22.x
+- npm 10+
+
 ## Modes
 
 - `stub` (default): local mock backend + auth bypass
@@ -41,13 +46,30 @@ npm run build:stub
 npm run build:supabase
 ```
 
+## Deploy to GitHub Pages
+
+This repo deploys from `.github/workflows/deploy.yml` on pushes to `main`.
+
+One-time GitHub setup:
+
+1. `Settings -> Pages -> Source` = `GitHub Actions`
+2. `Settings -> Secrets and variables -> Actions`:
+   - Repository variable: `SUPABASE_URL`
+   - Repository secret: `SUPABASE_ANON_KEY`
+
 ## Unit tests only
 
 ```bash
 npm test
 ```
 
-## CSV migration
+## Legacy Admin Tool: CSV migration
+
+`migrate:csv` is kept as a **legacy admin/bootstrap utility** for one-time bulk imports.
+Normal imports should use the in-app Import page.
+
+<details>
+<summary>Show legacy CSV migration commands</summary>
 
 Dry-run:
 
@@ -65,6 +87,8 @@ MARK_PROFILE_ID=<mark-auth-user-id> \
 RICHARD_PROFILE_ID=<richard-auth-user-id> \
 npm run migrate:csv
 ```
+
+</details>
 
 ## Supabase schema
 
