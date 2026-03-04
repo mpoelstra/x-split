@@ -162,16 +162,35 @@ export class ExpensesListComponent {
       return 'Member';
     }
 
-    return member.displayName.split(' ')[0];
+    return this.firstName(member.displayName);
   }
 
   private otherMemberName(payerMemberId: string): string {
+    const bill = this.currentBill();
+    const group = this.group();
+    if (bill) {
+      if (bill.friendMemberId && bill.friendMemberId !== payerMemberId) {
+        const friend = group?.members.find((member) => member.id === bill.friendMemberId);
+        if (friend) {
+          return this.firstName(friend.displayName);
+        }
+      }
+
+      if (bill.friendName && (!bill.friendMemberId || bill.friendMemberId !== payerMemberId)) {
+        return this.firstName(bill.friendName);
+      }
+    }
+
     const members = this.group()?.members ?? [];
     const other = members.find((entry) => entry.id !== payerMemberId);
     if (!other) {
       return 'friend';
     }
 
-    return other.displayName.split(' ')[0];
+    return this.firstName(other.displayName);
+  }
+
+  private firstName(displayName: string): string {
+    return displayName.trim().split(/\s+/)[0] ?? 'friend';
   }
 }
