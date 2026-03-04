@@ -110,18 +110,12 @@ export class SupabaseDataGateway implements IDataGateway {
       this.ensureDisplayNameFromEmail(user.email) ??
       'Unknown user';
 
-    const { error: profileError } = await this.client.from('profiles').upsert(
-      {
-        id: user.id,
-        display_name: displayName,
-        email: user.email ?? `${user.id}@example.com`
-      },
-      {
-        onConflict: 'id',
-        ignoreDuplicates: true
-      }
-    );
-    if (profileError) {
+    const { error: profileError } = await this.client.from('profiles').insert({
+      id: user.id,
+      display_name: displayName,
+      email: user.email ?? `${user.id}@example.com`
+    });
+    if (profileError && !isConflictError(profileError)) {
       throw profileError;
     }
   }
