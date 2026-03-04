@@ -1,6 +1,8 @@
 .layout {
   display: flex;
   min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   background: linear-gradient(180deg, #232710 0%, #1a1f0f 70%);
   color: #dce2d4;
 }
