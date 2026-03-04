@@ -19,7 +19,6 @@ export class LoginComponent {
 
   async signIn(): Promise<void> {
     await this.auth.signInWithGoogle();
-    await this.router.navigateByUrl('/app/dashboard');
   }
 
   async continueStub(): Promise<void> {

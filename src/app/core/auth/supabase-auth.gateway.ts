@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Session } from '@supabase/supabase-js';
@@ -9,6 +10,7 @@ import { SupabaseClientService } from '../supabase/supabase-client.service';
 export class SupabaseAuthGateway implements IAuthGateway {
   private readonly userSubject = new BehaviorSubject<UserProfile | null>(null);
   private readonly client = inject(SupabaseClientService).client;
+  private readonly document = inject(DOCUMENT);
   private authStateListenerBound = false;
 
   user$(): Observable<UserProfile | null> {
@@ -28,7 +30,11 @@ export class SupabaseAuthGateway implements IAuthGateway {
   }
 
   async signInWithGoogle(): Promise<void> {
-    await this.client.auth.signInWithOAuth({ provider: 'google' });
+    const redirectTo = new URL('app/dashboard', this.document.baseURI).toString();
+    await this.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo }
+    });
   }
 
   async signOut(): Promise<void> {
