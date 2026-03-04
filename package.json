@@ -4,10 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --configuration stub",
-    "start:supabase": "ng serve --configuration supabase",
+    "start:supabase": "node tools/ensure-supabase-local-env.mjs && ng serve --configuration supabase",
     "build": "ng build --configuration production",
     "build:stub": "ng build --configuration stub",
-    "build:supabase": "ng build --configuration supabase",
+    "build:supabase": "node tools/ensure-supabase-local-env.mjs && ng build --configuration supabase",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false",
     "migrate:csv": "node tools/migrate-csv.mjs"

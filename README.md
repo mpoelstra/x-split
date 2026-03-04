@@ -18,12 +18,20 @@ App uses `StubInterceptor` and seeded in-memory data, so no external setup is re
 
 ## Run against Supabase
 
-1. Update values in `src/environments/environment.supabase.ts`
-2. Start app:
+1. Copy the example file:
+
+```bash
+cp src/environments/environment.supabase.local.example.ts src/environments/environment.supabase.local.ts
+```
+
+2. Update values in `src/environments/environment.supabase.local.ts`
+3. Start app:
 
 ```bash
 npm run start:supabase
 ```
+
+`environment.supabase.local.ts` is gitignored and required by the `supabase` run/build scripts.
 
 ## Build
 

@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Local Supabase environment (contains credentials)
+src/environments/environment.supabase.local.ts

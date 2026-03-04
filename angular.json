@@ -73,7 +73,7 @@
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.supabase.ts"
+                  "with": "src/environments/environment.supabase.local.ts"
                 }
               ],
               "optimization": false,
