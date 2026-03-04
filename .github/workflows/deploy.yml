@@ -44,6 +44,9 @@ jobs:
       - name: Build app
         run: npm run build -- --base-href "/x-split/"
 
+      - name: Add SPA fallback for GitHub Pages
+        run: cp dist/x-split/browser/index.html dist/x-split/browser/404.html
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
