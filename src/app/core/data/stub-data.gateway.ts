@@ -27,6 +27,10 @@ export class StubDataGateway implements IDataGateway {
     return this.http.post<Bill>('/api/bills', input);
   }
 
+  deleteBill(billId: string): Observable<void> {
+    return this.http.delete<void>(`/api/bills/${billId}`);
+  }
+
   getCurrentBill(): Observable<Bill | null> {
     return this.http.get<Bill | null>('/api/bills/current');
   }

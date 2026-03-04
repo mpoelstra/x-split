@@ -163,13 +163,25 @@ select {
   border-radius: 10px;
   background: #232d38;
   color: inherit;
-  padding: 10px 11px;
-  text-align: left;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
+  padding: 6px 6px 6px 10px;
+
+  .bill-item-main {
+    border: none;
+    background: transparent;
+    color: inherit;
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
 
   strong {
     display: block;
@@ -216,6 +228,29 @@ select {
   .material-symbols-outlined {
     color: #8794a2;
   }
+}
+
+.delete-bill-btn {
+  border: 1px solid rgba(255, 122, 60, 0.34);
+  background: rgba(45, 20, 14, 0.6);
+  color: #ff7a3c;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.delete-bill-btn:hover {
+  background: rgba(66, 27, 18, 0.8);
+}
+
+.delete-bill-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .bill-item.active {

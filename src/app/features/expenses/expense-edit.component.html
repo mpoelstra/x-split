@@ -9,7 +9,7 @@
         <h1>Edit Expense</h1>
         <p>
           @if (currentBill(); as bill) {
-            Bill: {{ bill.title }} · with {{ bill.friendName }}
+            Bill: {{ bill.title }} · with {{ billCounterpartyName(bill) }}
           } @else {
             Update game details and split info.
           }
@@ -57,7 +57,7 @@
         <label>Share with</label>
         @if (currentBill(); as bill) {
           <div class="chips">
-            <span class="chip active"><i></i>{{ bill.friendName }}</span>
+            <span class="chip active"><i></i>{{ billCounterpartyName(bill) }}</span>
           </div>
         } @else {
           <div class="chips">

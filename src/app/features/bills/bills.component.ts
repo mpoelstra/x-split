@@ -104,6 +104,7 @@ export class BillsComponent {
     };
   });
   readonly creating = signal(false);
+  readonly deletingBillId = signal<string | null>(null);
 
   readonly friendOptions = computed(() => {
     const group = this.group();
@@ -142,6 +143,37 @@ export class BillsComponent {
   async openBill(bill: Bill): Promise<void> {
     await firstValueFrom(this.expenseService.setCurrentBill(bill.id));
     await this.router.navigateByUrl('/app/dashboard');
+  }
+
+  canDeleteBill(bill: Bill): boolean {
+    const me = this.user();
+    if (!me) {
+      return false;
+    }
+
+    return bill.createdByProfileId === me.id;
+  }
+
+  async deleteBill(bill: Bill, event?: Event): Promise<void> {
+    event?.stopPropagation();
+    event?.preventDefault();
+    if (!this.canDeleteBill(bill) || this.deletingBillId()) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${bill.title}" and all linked expenses for this bill? This cannot be undone.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingBillId.set(bill.id);
+    try {
+      await firstValueFrom(this.expenseService.deleteBill(bill.id));
+    } finally {
+      this.deletingBillId.set(null);
+    }
   }
 
   statusFor(billId: string): BillStatus | null {

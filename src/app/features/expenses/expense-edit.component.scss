@@ -222,11 +222,91 @@ select {
 }
 
 @media (max-width: 860px) {
-  .titles h1 {
-    font-size: 2.2rem;
+  .purchase-shell {
+    gap: 10px;
+  }
+
+  .crumbs {
+    display: none;
+  }
+
+  .topbar {
+    padding-top: 0;
+  }
+
+  .titles {
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 4px;
+    }
+
+    p {
+      font-size: 0.84rem;
+      color: #a9b39e;
+    }
+  }
+
+  .back {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border-color: rgba(122, 122, 16, 0.38);
+  }
+
+  .form-card {
+    padding: 14px;
+    gap: 14px;
+    border-radius: 18px;
+    background: rgba(20, 25, 13, 0.94);
+    border-color: rgba(122, 122, 16, 0.3);
+  }
+
+  .field label {
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #a8b78f;
+  }
+
+  input,
+  select {
+    height: 50px;
+    border-radius: 13px;
+    padding: 0 12px;
+  }
+
+  .input-wrap {
+    border-radius: 13px;
+  }
+
+  .ta-url-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ta-url-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auto-link,
+  .visit-link {
+    width: 100%;
+    border-radius: 11px;
+    height: 46px;
   }
 
   .grid-two {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .submit {
+    position: sticky;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 12;
+    border-radius: 14px;
+    background: #8b9512;
+    box-shadow: 0 14px 28px rgba(23, 28, 11, 0.58);
   }
 }

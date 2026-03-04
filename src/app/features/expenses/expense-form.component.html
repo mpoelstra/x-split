@@ -9,7 +9,7 @@
         <h1>Add New Purchase</h1>
         <p>
           @if (currentBill(); as bill) {
-            Bill: {{ bill.title }} · with {{ bill.friendName }}
+            Bill: {{ bill.title }} · with {{ billCounterpartyName(bill) }}
           } @else {
             Record a new game or DLC to split the costs with your group.
           }
@@ -57,7 +57,7 @@
         <label>Share with</label>
         @if (currentBill(); as bill) {
           <div class="chips">
-            <span class="chip active"><i></i>{{ bill.friendName }}</span>
+            <span class="chip active"><i></i>{{ billCounterpartyName(bill) }}</span>
           </div>
         } @else {
           <div class="chips">

@@ -25,11 +25,13 @@ import { calculateBalances } from '../utils/balance-calculator';
 
 @Injectable({ providedIn: 'root' })
 export class ExpenseService {
+  private static readonly BILL_STORAGE_KEY = 'xsplit:selected-bill-id';
   private readonly gateway = inject(DATA_GATEWAY);
   private readonly billSelectionChangedSubject = new Subject<string>();
   private readonly refreshSubject = new BehaviorSubject<void>(undefined);
-  private readonly selectedBillIdSubject = new BehaviorSubject<string | null>(null);
+  private readonly selectedBillIdSubject = new BehaviorSubject<string | null>(this.readPersistedBillId());
   private readonly expensesRefreshSubject = new BehaviorSubject<void>(undefined);
+  private syncedGatewayBillId: string | null = null;
 
   private readonly currentGroup$ = this.refreshSubject.pipe(
     switchMap(() => this.gateway.getCurrentGroup()),
@@ -51,6 +53,13 @@ export class ExpenseService {
 
       return bills.find((bill) => bill.id === selectedId) ?? bills[0];
     }),
+    tap((bill) => {
+      const activeBillId = bill?.id ?? null;
+      if (this.selectedBillIdSubject.value !== activeBillId) {
+        this.selectedBillIdSubject.next(activeBillId);
+      }
+      this.persistBillId(activeBillId);
+    }),
     distinctUntilChanged((a, b) => a?.id === b?.id),
     shareReplay({ bufferSize: 1, refCount: true })
   );
@@ -58,6 +67,15 @@ export class ExpenseService {
     switchMap(([bill]) => {
       if (!bill) {
         return of([]);
+      }
+
+      if (this.syncedGatewayBillId !== bill.id) {
+        return this.gateway.setCurrentBill(bill.id).pipe(
+          tap((selectedBill) => {
+            this.syncedGatewayBillId = selectedBill.id;
+          }),
+          switchMap(() => this.gateway.getExpenses())
+        );
       }
 
       return this.gateway.getExpenses();
@@ -89,10 +107,24 @@ export class ExpenseService {
   createBill(input: CreateBillInput): Observable<Bill> {
     return this.gateway.createBill(input).pipe(
       tap((bill) => {
-        this.selectedBillIdSubject.next(bill.id);
+        this.selectBillId(bill.id);
+        this.syncedGatewayBillId = bill.id;
         this.refresh();
         this.expensesRefresh();
         this.billSelectionChangedSubject.next(bill.id);
+      })
+    );
+  }
+
+  deleteBill(billId: string): Observable<void> {
+    return this.gateway.deleteBill(billId).pipe(
+      tap(() => {
+        if (this.selectedBillIdSubject.value === billId) {
+          this.selectBillId(null);
+        }
+        this.syncedGatewayBillId = null;
+        this.refresh();
+        this.expensesRefresh();
       })
     );
   }
@@ -104,7 +136,8 @@ export class ExpenseService {
   setCurrentBill(billId: string, notify = true): Observable<Bill> {
     return this.gateway.setCurrentBill(billId).pipe(
       tap((bill) => {
-        this.selectedBillIdSubject.next(bill.id);
+        this.selectBillId(bill.id);
+        this.syncedGatewayBillId = bill.id;
         this.expensesRefresh();
         if (notify) {
           this.billSelectionChangedSubject.next(bill.id);
@@ -152,7 +185,8 @@ export class ExpenseService {
   adminResetData(): Observable<void> {
     return this.gateway.adminResetData().pipe(
       tap(() => {
-        this.selectedBillIdSubject.next(null);
+        this.selectBillId(null);
+        this.syncedGatewayBillId = null;
         this.refresh();
         this.expensesRefresh();
       })
@@ -165,6 +199,32 @@ export class ExpenseService {
 
   private expensesRefresh(): void {
     this.expensesRefreshSubject.next(undefined);
+  }
+
+  private selectBillId(billId: string | null): void {
+    this.selectedBillIdSubject.next(billId);
+    this.persistBillId(billId);
+  }
+
+  private readPersistedBillId(): string | null {
+    try {
+      return globalThis.localStorage?.getItem(ExpenseService.BILL_STORAGE_KEY) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private persistBillId(billId: string | null): void {
+    try {
+      if (!billId) {
+        globalThis.localStorage?.removeItem(ExpenseService.BILL_STORAGE_KEY);
+        return;
+      }
+
+      globalThis.localStorage?.setItem(ExpenseService.BILL_STORAGE_KEY, billId);
+    } catch {
+      // Ignore storage unavailability.
+    }
   }
 
   private resolveBalanceMembers(group: Group, currentBill: Bill | null, expenses: Expense[]): Group['members'] {

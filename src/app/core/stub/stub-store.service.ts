@@ -33,6 +33,7 @@ export class StubStoreService {
     {
       id: 'bill-xbox-games',
       groupId: 'group-xsplit',
+      createdByProfileId: 'user-mark',
       title: 'Xbox Games',
       friendMemberId: 'member-richard',
       friendName: 'Richard Booij',
@@ -41,6 +42,7 @@ export class StubStoreService {
     {
       id: 'bill-game-pass',
       groupId: 'group-xsplit',
+      createdByProfileId: 'user-mark',
       title: 'Game Pass + DLC',
       friendMemberId: 'member-richard',
       friendName: 'Richard Booij',
@@ -49,6 +51,7 @@ export class StubStoreService {
     {
       id: 'bill-coop-month',
       groupId: 'group-xsplit',
+      createdByProfileId: 'user-mark',
       title: 'Co-op Month March',
       friendMemberId: 'member-richard',
       friendName: 'Richard Booij',
@@ -57,6 +60,7 @@ export class StubStoreService {
     {
       id: 'bill-remaster-drop',
       groupId: 'group-xsplit',
+      createdByProfileId: 'user-mark',
       title: 'Remaster Drop',
       friendMemberId: 'member-richard',
       friendName: 'Richard Booij',
@@ -277,6 +281,7 @@ export class StubStoreService {
     const bill: Bill = {
       id: `bill-${this.bills.length + 1}`,
       groupId: this.group.id,
+      createdByProfileId: this.me.id,
       title,
       friendMemberId: friendFromMember?.id,
       friendName,
@@ -381,6 +386,24 @@ export class StubStoreService {
     }
 
     this.expenses = this.expenses.filter((entry) => entry.id !== expenseId);
+  }
+
+  removeBill(billId: string): void {
+    const bill = this.bills.find((entry) => entry.id === billId);
+    if (!bill) {
+      throw new Error('Bill not found');
+    }
+
+    if (bill.createdByProfileId !== this.me.id) {
+      throw new Error('You can only delete bills you created');
+    }
+
+    this.bills = this.bills.filter((entry) => entry.id !== billId);
+    this.expenses = this.expenses.filter((entry) => entry.billId !== billId);
+
+    if (this.activeBillId === billId) {
+      this.activeBillId = this.bills[0]?.id ?? null;
+    }
   }
 
   reset(): void {

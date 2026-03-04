@@ -80,6 +80,10 @@
   overflow: hidden;
 }
 
+.mobile-expenses {
+  display: none;
+}
+
 .empty-card {
   padding: 18px;
 
@@ -283,34 +287,259 @@
 }
 
 @media (max-width: 860px) {
-  .row {
-    grid-template-columns: 1fr;
+  .history-page {
+    min-width: 0;
+    overflow-x: clip;
   }
 
   .history-head {
+    gap: 10px;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    min-width: 0;
+    max-width: 100%;
+
+    h1 {
+      font-size: 1.95rem;
+      margin-bottom: 5px;
+    }
+
+    p {
+      font-size: 0.82rem;
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
   }
 
-  .head-action {
-    align-items: flex-start;
+  .head-main {
+    width: 100%;
+    gap: 8px;
+    flex: none;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .filters {
     width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .filters > * {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .filter-input,
   .sort-select {
     width: 100%;
     min-width: 0;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(18, 24, 13, 0.9);
+    border-color: rgba(122, 122, 16, 0.32);
+    font-size: 0.92rem;
   }
 
-  .history-head h1 {
-    font-size: 2.2rem;
-  }
-
-  .row.header {
+  .head-action {
     display: none;
+  }
+
+  .history-card {
+    display: none;
+  }
+
+  .mobile-expenses {
+    display: grid;
+    gap: 10px;
+    margin-top: 4px;
+    min-width: 0;
+  }
+
+  .expense-item {
+    border-radius: 16px;
+    border: 1px solid rgba(79, 88, 98, 0.42);
+    background: #1f2730;
+    padding: 9px 10px;
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .expense-item.empty-mobile {
+    color: #9aa7b5;
+    font-size: 0.9rem;
+  }
+
+  .expense-top {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 76px;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .expense-top .game {
+    min-width: 0;
+
+    strong {
+      font-size: 0.98rem;
+      line-height: 1.2;
+    }
+
+    a {
+      overflow-wrap: anywhere;
+    }
+
+    small {
+      font-size: 0.78rem;
+      color: #92a1b0;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .expense-money {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(78, 87, 97, 0.48);
+    background: rgba(35, 45, 56, 0.74);
+    padding: 7px 8px;
+    min-width: 0;
+  }
+
+  .total-amount {
+    font-size: 1rem;
+    font-weight: 750;
+    color: #edf3e7;
+    white-space: nowrap;
+  }
+
+  .loan-chip {
+    font-size: 0.79rem;
+    font-weight: 760;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    text-align: right;
+  }
+
+  .loan-chip.loan-positive {
+    color: #57c59d;
+  }
+
+  .loan-chip.loan-negative {
+    color: #ff6b57;
+  }
+
+  .actions {
+    justify-content: flex-end;
+    gap: 6px;
+    width: 76px;
+  }
+
+  .edit-btn.icon-only,
+  .delete-btn {
+    min-width: 34px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 9px;
+  }
+
+  .edit-btn.icon-only .material-symbols-outlined,
+  .delete-btn .material-symbols-outlined {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-expenses .expense-item {
+    overflow: hidden;
+  }
+
+  .mobile-expenses .expense-top {
+    grid-template-columns: minmax(0, 1fr) 68px;
+    gap: 6px;
+    align-items: start;
+  }
+
+  .mobile-expenses .expense-top .ta-link {
+    display: none;
+  }
+
+  .mobile-expenses .expense-top .game strong a {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    line-height: 1.18;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-expenses .expense-top .game {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .mobile-expenses .expense-top .game strong {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .mobile-expenses .expense-top .game small {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-expenses .actions {
+    width: 68px;
+    gap: 4px;
+  }
+
+  .mobile-expenses .expense-money {
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    gap: 8px;
+    padding: 7px 8px;
+  }
+
+  .mobile-expenses .total-amount {
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .mobile-expenses .loan-chip {
+    font-size: 0.79rem;
+    line-height: 1.2;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .mobile-expenses .edit-btn.icon-only,
+  .mobile-expenses .delete-btn {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .mobile-expenses .edit-btn.icon-only .material-symbols-outlined,
+  .mobile-expenses .delete-btn .material-symbols-outlined {
+    font-size: 16px;
   }
 }

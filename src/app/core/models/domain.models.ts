@@ -22,6 +22,7 @@ export interface GroupMember {
 export interface Bill {
   id: string;
   groupId: string;
+  createdByProfileId?: string;
   title: string;
   friendMemberId?: string;
   friendName: string;

@@ -12,6 +12,7 @@ import { DATA_GATEWAY, IDataGateway } from './data-gateway';
 import { ExpenseService } from './expense.service';
 
 describe('ExpenseService', () => {
+  const billStorageKey = 'xsplit:selected-bill-id';
   const group: Group = {
     id: 'g1',
     name: 'X-Split',
@@ -49,6 +50,7 @@ describe('ExpenseService', () => {
       'getCurrentGroup',
       'getBills',
       'createBill',
+      'deleteBill',
       'getCurrentBill',
       'setCurrentBill',
       'ensurePendingInviteMember',
@@ -69,6 +71,7 @@ describe('ExpenseService', () => {
         title: input.title
       })
     );
+    gateway.deleteBill.and.returnValue(of(undefined));
     gateway.getCurrentBill.and.returnValue(of(bill));
     gateway.setCurrentBill.and.returnValue(of(bill));
     gateway.ensurePendingInviteMember.and.returnValue(of('m2'));
@@ -93,6 +96,10 @@ describe('ExpenseService', () => {
 
     return gateway;
   };
+
+  beforeEach(() => {
+    localStorage.removeItem(billStorageKey);
+  });
 
   it('delegates and returns current group', (done) => {
     const gateway = createGatewaySpy();
@@ -184,5 +191,39 @@ describe('ExpenseService', () => {
     expect(markBalance).toBe(-19.35);
     expect(richardBalance).toBe(19.35);
     expect(extraMemberBalance).toBeUndefined();
+  });
+
+  it('restores selected bill on reload and syncs gateway bill context', async () => {
+    localStorage.setItem(billStorageKey, 'b2');
+    const gateway = createGatewaySpy();
+    gateway.getBills.and.returnValue(of([
+      bill,
+      {
+        ...bill,
+        id: 'b2',
+        title: 'Playstation Games'
+      }
+    ]));
+    gateway.setCurrentBill.and.callFake((billId: string) =>
+      of({
+        ...bill,
+        id: billId,
+        title: billId === 'b2' ? 'Playstation Games' : bill.title
+      })
+    );
+
+    TestBed.configureTestingModule({
+      providers: [
+        ExpenseService,
+        { provide: DATA_GATEWAY, useValue: gateway }
+      ]
+    });
+
+    const service = TestBed.inject(ExpenseService);
+    const selected = await firstValueFrom(service.getCurrentBill().pipe(take(1)));
+    await firstValueFrom(service.getExpenses().pipe(take(1)));
+
+    expect(selected?.id).toBe('b2');
+    expect(gateway.setCurrentBill).toHaveBeenCalledWith('b2');
   });
 });

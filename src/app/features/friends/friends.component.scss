@@ -178,11 +178,72 @@
 
 @media (max-width: 860px) {
   .friends-head {
-    flex-direction: column;
-    align-items: flex-start;
+    gap: 10px;
+
+    h1 {
+      font-size: 1.95rem;
+      margin-bottom: 5px;
+    }
+
+    p {
+      font-size: 0.82rem;
+    }
+  }
+
+  .cta {
+    width: 100%;
+    justify-content: center;
+    border-radius: 13px;
+    padding: 12px 14px;
+    background: #0f8a1a;
+    box-shadow: 0 10px 22px rgba(15, 138, 26, 0.34);
+  }
+
+  .friends-grid {
+    gap: 10px;
+  }
+
+  .friend-card {
+    border-radius: 16px;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .top {
+    gap: 8px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .meta {
+    h2 {
+      font-size: 1rem;
+    }
+
+    p {
+      font-size: 0.8rem;
+    }
   }
 
   .stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+
+    div {
+      border-radius: 11px;
+      padding: 8px 9px;
+    }
+
+    div:last-child {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .empty {
+    border-radius: 16px;
+    padding: 18px 14px;
   }
 }

@@ -70,6 +70,14 @@ describe('AppShellComponent (class-only)', () => {
     expect(component.currentBalance()).toBe(2);
     expect(component.billTone()).toBe('owed');
     expect(component.billAmount()).toBe(2);
+    expect(component.billOptionLabel({
+      id: 'b1',
+      groupId: 'g1',
+      title: 'Xbox Games',
+      friendName: 'Andrea',
+      friendMemberId: 'm2',
+      createdAt: '2026-03-01T00:00:00Z'
+    })).toBe('Xbox Games - Andrea');
     expect(component.hasLoadError()).toBeFalse();
   });
 

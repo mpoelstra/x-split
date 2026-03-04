@@ -79,24 +79,39 @@
       <div class="bill-list">
         @for (bill of bills(); track bill.id) {
           @let counterparty = sharedWith(bill);
-          <button type="button" class="bill-item" [class.active]="currentBill()?.id === bill.id" (click)="selectBill(bill)">
-            <div>
-              <strong>{{ bill.title }}</strong>
-              <small>Shared with {{ counterparty.name }}</small>
-              @if (statusFor(bill.id); as status) {
-                <span class="status" [class.owed]="status.tone === 'owed'" [class.owe]="status.tone === 'owe'" [class.even]="status.tone === 'even'">
-                  @if (status.tone === 'owed') {
-                    You are owed {{ status.amount | currency : 'EUR' : 'symbol' : '1.2-2' }}
-                  } @else if (status.tone === 'owe') {
-                    You owe {{ status.amount | currency : 'EUR' : 'symbol' : '1.2-2' }}
-                  } @else {
-                    Even
-                  }
-                </span>
-              }
-            </div>
-            <span class="material-symbols-outlined">chevron_right</span>
-          </button>
+          <article class="bill-item" [class.active]="currentBill()?.id === bill.id">
+            <button type="button" class="bill-item-main" (click)="selectBill(bill)">
+              <div>
+                <strong>{{ bill.title }}</strong>
+                <small>Shared with {{ counterparty.name }}</small>
+                @if (statusFor(bill.id); as status) {
+                  <span class="status" [class.owed]="status.tone === 'owed'" [class.owe]="status.tone === 'owe'" [class.even]="status.tone === 'even'">
+                    @if (status.tone === 'owed') {
+                      You are owed {{ status.amount | currency : 'EUR' : 'symbol' : '1.2-2' }}
+                    } @else if (status.tone === 'owe') {
+                      You owe {{ status.amount | currency : 'EUR' : 'symbol' : '1.2-2' }}
+                    } @else {
+                      Even
+                    }
+                  </span>
+                }
+              </div>
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+            @if (canDeleteBill(bill)) {
+              <button
+                type="button"
+                class="delete-bill-btn"
+                [disabled]="deletingBillId() === bill.id"
+                (click)="deleteBill(bill, $event)"
+                title="Delete bill and its expenses"
+                aria-label="Delete bill"
+              >
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            }
+          </article>
         }
 
         @if (bills().length === 0) {

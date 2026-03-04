@@ -17,6 +17,26 @@
   </aside>
 
   <main class="content">
+    <header class="mobile-brandbar">
+      <a routerLink="/app/dashboard" class="mobile-brand">
+        <span class="material-symbols-outlined">stadia_controller</span>
+      </a>
+      <h1>X-Split</h1>
+      <a routerLink="/app/account" class="mobile-account">
+        @if (user()?.avatarUrl && !avatarLoadFailed()) {
+          <img
+            [src]="user()?.avatarUrl"
+            [alt]="userDisplayName() + ' avatar'"
+            referrerpolicy="no-referrer"
+            crossorigin="anonymous"
+            (error)="onAvatarLoadError()"
+          />
+        } @else {
+          <span class="initials">{{ userInitials() }}</span>
+        }
+      </a>
+    </header>
+
     <header class="content-topbar">
       <div class="bill-switcher">
         @if (bills().length > 0) {
@@ -29,7 +49,7 @@
               (change)="onBillSelect($event)"
             >
               @for (bill of bills(); track bill.id) {
-                <option [value]="bill.id">{{ bill.title }} - {{ bill.friendName }}</option>
+                <option [value]="bill.id" [selected]="bill.id === (currentBill()?.id ?? '')">{{ billOptionLabel(bill) }}</option>
               }
             </select>
             <span class="bill-badge" [class.owed]="billTone() === 'owed'" [class.owe]="billTone() === 'owe'" [class.even]="billTone() === 'even'">
@@ -70,5 +90,27 @@
     <div class="page-content">
       <router-outlet></router-outlet>
     </div>
+
+    <nav class="mobile-tabbar">
+      <a routerLink="/app/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="material-symbols-outlined">dashboard</span>
+        <small>Dashboard</small>
+      </a>
+      <a routerLink="/app/bills" routerLinkActive="active">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <small>Bills</small>
+      </a>
+      <a routerLink="/app/expenses/new" class="add" aria-label="Add expense">
+        <span class="material-symbols-outlined">add</span>
+      </a>
+      <a routerLink="/app/expenses" routerLinkActive="active">
+        <span class="material-symbols-outlined">history</span>
+        <small>Expenses</small>
+      </a>
+      <a routerLink="/app/friends" routerLinkActive="active">
+        <span class="material-symbols-outlined">group</span>
+        <small>Friends</small>
+      </a>
+    </nav>
   </main>
 </div>

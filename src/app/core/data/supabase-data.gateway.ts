@@ -110,12 +110,18 @@ export class SupabaseDataGateway implements IDataGateway {
       this.ensureDisplayNameFromEmail(user.email) ??
       'Unknown user';
 
-    const { error: profileError } = await this.client.from('profiles').insert({
-      id: user.id,
-      display_name: displayName,
-      email: user.email ?? `${user.id}@example.com`
-    });
-    if (profileError && !isConflictError(profileError)) {
+    const { error: profileError } = await this.client.from('profiles').upsert(
+      {
+        id: user.id,
+        display_name: displayName,
+        email: user.email ?? `${user.id}@example.com`
+      },
+      {
+        onConflict: 'id',
+        ignoreDuplicates: true
+      }
+    );
+    if (profileError) {
       throw profileError;
     }
   }
@@ -228,7 +234,7 @@ export class SupabaseDataGateway implements IDataGateway {
       from(
         this.client
           .from('bills')
-          .select('id,group_id,title,friend_member_id,friend_name,invite_email,created_at')
+          .select('id,group_id,created_by,title,friend_member_id,friend_name,invite_email,created_at')
           .eq('group_id', groupId)
           .order('created_at', { ascending: false })
       ).pipe(
@@ -240,6 +246,7 @@ export class SupabaseDataGateway implements IDataGateway {
           return (data ?? []).map((row) => ({
             id: row.id as string,
             groupId: row.group_id as string,
+            createdByProfileId: row.created_by as string | undefined,
             title: row.title as string,
             friendMemberId: row.friend_member_id as string | undefined,
             friendName: (row.friend_name as string) || 'Friend',
@@ -303,7 +310,7 @@ export class SupabaseDataGateway implements IDataGateway {
                   friend_name: input.friendName,
                   invite_email: input.inviteEmail?.trim()
                 })
-                .select('id,group_id,title,friend_member_id,friend_name,invite_email,created_at')
+                .select('id,group_id,created_by,title,friend_member_id,friend_name,invite_email,created_at')
                 .single()
             )
           ),
@@ -343,6 +350,7 @@ export class SupabaseDataGateway implements IDataGateway {
         const bill: Bill = {
           id: data.id as string,
           groupId: data.group_id as string,
+          createdByProfileId: data.created_by as string | undefined,
           title: data.title as string,
           friendMemberId: data.friend_member_id as string | undefined,
           friendName: (data.friend_name as string) || 'Friend',
@@ -352,6 +360,22 @@ export class SupabaseDataGateway implements IDataGateway {
 
         this.currentBillId = bill.id;
         return bill;
+      })
+    );
+  }
+
+  deleteBill(billId: string): Observable<void> {
+    return from(
+      this.client.from('bills').delete().eq('id', billId)
+    ).pipe(
+      map(({ error }) => {
+        if (error) {
+          throw error;
+        }
+
+        if (this.currentBillId === billId) {
+          this.currentBillId = null;
+        }
       })
     );
   }

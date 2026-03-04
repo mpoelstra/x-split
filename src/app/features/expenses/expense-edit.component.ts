@@ -4,6 +4,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { DEFAULT_EXPENSE_CATEGORY } from '../../core/constants/expense.constants';
 import { Bill, Expense, Group } from '../../core/models/domain.models';
 import { calculateNetToPayer } from '../../core/utils/net-to-payer';
@@ -19,9 +20,11 @@ import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link'
 export class ExpenseEditComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly expenseService = inject(ExpenseService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
+  readonly user = this.authService.user;
   readonly group = signal<Group | null>(null);
   readonly currentBill = signal<Bill | null>(null);
   readonly expense = signal<Expense | null>(null);
@@ -187,6 +190,31 @@ export class ExpenseEditComponent implements OnInit {
     }
 
     window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  billCounterpartyName(bill: Bill): string {
+    const group = this.group();
+    const me = this.user();
+    if (!group || !me) {
+      return bill.friendName;
+    }
+
+    const meMember = group.members.find((member) => member.profileId === me.id);
+    if (!meMember) {
+      return bill.friendName;
+    }
+
+    if (bill.friendMemberId) {
+      if (bill.friendMemberId === meMember.id) {
+        const owner = group.members.find((member) => member.role === 'owner' && member.id !== meMember.id);
+        const fallback = group.members.find((member) => member.id !== meMember.id);
+        return owner?.displayName ?? fallback?.displayName ?? bill.friendName;
+      }
+
+      return group.members.find((member) => member.id === bill.friendMemberId)?.displayName ?? bill.friendName;
+    }
+
+    return bill.friendName;
   }
 
   private patchForm(expense: Expense): void {

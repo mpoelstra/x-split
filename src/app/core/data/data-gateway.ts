@@ -13,6 +13,7 @@ export interface IDataGateway {
   getCurrentGroup(): Observable<Group>;
   getBills(): Observable<Bill[]>;
   createBill(input: CreateBillInput): Observable<Bill>;
+  deleteBill(billId: string): Observable<void>;
   getCurrentBill(): Observable<Bill | null>;
   setCurrentBill(billId: string): Observable<Bill>;
   ensurePendingInviteMember(billId: string): Observable<string>;

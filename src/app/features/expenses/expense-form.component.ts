@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { DEFAULT_EXPENSE_CATEGORY } from '../../core/constants/expense.constants';
 import { Bill, Group } from '../../core/models/domain.models';
 import { calculateNetToPayer } from '../../core/utils/net-to-payer';
@@ -19,8 +20,10 @@ import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link'
 export class ExpenseFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly expenseService = inject(ExpenseService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
+  readonly user = this.authService.user;
   readonly group = signal<Group | null>(null);
   readonly currentBill = signal<Bill | null>(null);
   readonly submitting = signal(false);
@@ -91,9 +94,6 @@ export class ExpenseFormComponent {
       .subscribe({
       next: (group) => {
         this.group.set(group);
-        if (!this.form.controls.paidByMemberId.value && group.members.length > 0) {
-          this.form.controls.paidByMemberId.setValue(group.members[0].id);
-        }
       },
       error: () => this.group.set(null)
     });
@@ -109,6 +109,28 @@ export class ExpenseFormComponent {
       error: async () => {
         this.currentBill.set(null);
         await this.router.navigateByUrl('/app/bills');
+      }
+    });
+
+    effect(() => {
+      const group = this.group();
+      if (!group || group.members.length === 0) {
+        return;
+      }
+
+      const me = this.user();
+      const selectedMemberId = this.form.controls.paidByMemberId.value;
+      const meMemberId = me ? group.members.find((member) => member.profileId === me.id)?.id : undefined;
+
+      if (meMemberId) {
+        if (!selectedMemberId || (this.form.controls.paidByMemberId.pristine && selectedMemberId !== meMemberId)) {
+          this.form.controls.paidByMemberId.setValue(meMemberId);
+        }
+        return;
+      }
+
+      if (!selectedMemberId) {
+        this.form.controls.paidByMemberId.setValue(group.members[0].id);
       }
     });
   }
@@ -170,5 +192,30 @@ export class ExpenseFormComponent {
     }
 
     window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  billCounterpartyName(bill: Bill): string {
+    const group = this.group();
+    const me = this.user();
+    if (!group || !me) {
+      return bill.friendName;
+    }
+
+    const meMember = group.members.find((member) => member.profileId === me.id);
+    if (!meMember) {
+      return bill.friendName;
+    }
+
+    if (bill.friendMemberId) {
+      if (bill.friendMemberId === meMember.id) {
+        const owner = group.members.find((member) => member.role === 'owner' && member.id !== meMember.id);
+        const fallback = group.members.find((member) => member.id !== meMember.id);
+        return owner?.displayName ?? fallback?.displayName ?? bill.friendName;
+      }
+
+      return group.members.find((member) => member.id === bill.friendMemberId)?.displayName ?? bill.friendName;
+    }
+
+    return bill.friendName;
   }
 }

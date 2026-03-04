@@ -34,6 +34,23 @@ create table if not exists bills (
   created_at timestamptz not null default now()
 );
 
+alter table bills
+  add column if not exists created_by uuid references profiles(id);
+
+alter table bills
+  alter column created_by set default auth.uid();
+
+update public.bills b
+set created_by = coalesce(
+  b.created_by,
+  (
+    select g.created_by
+    from public.groups g
+    where g.id = b.group_id
+  )
+)
+where b.created_by is null;
+
 create table if not exists invites (
   id uuid primary key default gen_random_uuid(),
   group_id text not null references groups(id) on delete cascade,
@@ -167,6 +184,7 @@ drop policy if exists "members can view members" on group_members;
 drop policy if exists "owners can insert group members" on group_members;
 drop policy if exists "members can view bills" on bills;
 drop policy if exists "members can insert bills" on bills;
+drop policy if exists "creators can delete bills" on bills;
 drop policy if exists "users can view invites" on invites;
 drop policy if exists "members can insert invites" on invites;
 drop policy if exists "members can view expenses" on expenses;
@@ -218,6 +236,12 @@ create policy "members can insert bills"
 on bills for insert
 with check (
   public.is_group_member(bills.group_id)
+);
+
+create policy "creators can delete bills"
+on bills for delete
+using (
+  bills.created_by = auth.uid()
 );
 
 create policy "users can view invites"

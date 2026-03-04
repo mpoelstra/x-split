@@ -43,6 +43,21 @@ export class StubInterceptor implements HttpInterceptor {
       }
     }
 
+    if (req.method === 'DELETE' && req.url.match(/^\/api\/bills\/[^/]+$/)) {
+      const billId = req.url.replace('/api/bills/', '');
+      try {
+        this.store.removeBill(billId);
+        return of(new HttpResponse({ status: 204, body: null }));
+      } catch (error) {
+        return of(
+          new HttpResponse({
+            status: 403,
+            body: { message: error instanceof Error ? error.message : 'Unable to delete bill' }
+          })
+        );
+      }
+    }
+
     if (req.method === 'GET' && req.url === '/api/bills/current') {
       return of(new HttpResponse({ status: 200, body: this.store.getActiveBill() }));
     }
