@@ -98,4 +98,36 @@ describe('ExpensesListComponent', () => {
 
     expect(component.canDelete(expense)).toBeFalse();
   });
+
+  it('sorts newest-first by createdAt when expenses share the same expense date', () => {
+    component.expenses.set([
+      {
+        id: 'e-old',
+        groupId: 'g1',
+        billId: 'b1',
+        gameTitle: 'Older on same day',
+        amount: 9,
+        currency: 'EUR',
+        paidByMemberId: 'm1',
+        expenseDate: '2026-03-05',
+        source: 'manual',
+        createdAt: '2026-03-05T09:00:00Z'
+      },
+      {
+        id: 'e-new',
+        groupId: 'g1',
+        billId: 'b1',
+        gameTitle: 'Newest on same day',
+        amount: 10,
+        currency: 'EUR',
+        paidByMemberId: 'm1',
+        expenseDate: '2026-03-05',
+        source: 'manual',
+        createdAt: '2026-03-05T11:30:00Z'
+      }
+    ]);
+
+    const orderedIds = component.filteredExpenses().map((expense) => expense.id);
+    expect(orderedIds).toEqual(['e-new', 'e-old']);
+  });
 });

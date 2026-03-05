@@ -9,6 +9,7 @@ import {
   UserProfile
 } from '../models/domain.models';
 import { trueAchievementsGameUrl } from '../utils/trueachievements-link';
+import { compareExpensesNewestFirst } from '../utils/expense-sort';
 
 @Injectable({ providedIn: 'root' })
 export class StubStoreService {
@@ -302,7 +303,7 @@ export class StubStoreService {
 
     return [...this.expenses]
       .filter((expense) => expense.billId === activeBill.id)
-      .sort((a, b) => b.expenseDate.localeCompare(a.expenseDate));
+      .sort(compareExpensesNewestFirst);
   }
 
   getExpenseById(expenseId: string): Expense {

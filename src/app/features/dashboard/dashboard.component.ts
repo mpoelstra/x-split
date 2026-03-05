@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -8,6 +8,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { BalanceSummary, Bill, Expense, Group } from '../../core/models/domain.models';
 import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
 import { APP_ENV } from '../../core/env/app-env.token';
+import { compareExpensesNewestFirst } from '../../core/utils/expense-sort';
 
 @Component({
     selector: 'app-dashboard',
@@ -17,9 +18,12 @@ import { APP_ENV } from '../../core/env/app-env.token';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent {
+  private static readonly ACTIVITY_SEEN_STORAGE_PREFIX = 'xsplit:activity-seen';
   private readonly expenseService = inject(ExpenseService);
   private readonly authService = inject(AuthService);
   private readonly env = inject(APP_ENV);
+  private readonly readStateVersion = signal(0);
+  private readonly inMemoryReadState = new Map<string, string>();
 
   readonly user = this.authService.user;
   readonly groupLoadError = signal(false);
@@ -71,7 +75,7 @@ export class DashboardComponent {
     this.expenses().reduce((sum, expense) => sum + expense.amount, 0)
   );
 
-  readonly recentActivity = computed(() => this.expenses().slice(0, 20));
+  readonly recentActivity = computed(() => [...this.expenses()].sort(compareExpensesNewestFirst).slice(0, 20));
   readonly currencyCode = computed(() => this.expenses()[0]?.currency || 'EUR');
   readonly currentMemberId = computed(() => {
     const me = this.user();
@@ -86,6 +90,26 @@ export class DashboardComponent {
     const members = this.group()?.members ?? [];
     return new Map(members.map((member) => [member.id, member.displayName]));
   });
+  readonly unreadExpenseIds = computed(() => {
+    this.readStateVersion();
+    const user = this.user();
+    const bill = this.currentBill();
+    if (!user || !bill) {
+      return new Set<string>();
+    }
+
+    const lastSeenAt = this.readLastSeenAt(this.storageKey(user.id, bill.id));
+    if (!lastSeenAt) {
+      return new Set<string>();
+    }
+
+    const unreadIds = this.expenses()
+      .filter((expense) => this.isUnreadExpenseForUser(expense, user.id, lastSeenAt))
+      .map((expense) => expense.id);
+
+    return new Set(unreadIds);
+  });
+  readonly unreadExpenseCount = computed(() => this.unreadExpenseIds().size);
 
   readonly myBalance = computed(() => {
     const currentMemberId = this.currentMemberId();
@@ -96,8 +120,40 @@ export class DashboardComponent {
     return this.balances().find((balance) => balance.memberId === currentMemberId)?.balance ?? 0;
   });
 
+  constructor() {
+    effect(() => {
+      const user = this.user();
+      const bill = this.currentBill();
+      const expenses = this.expenses();
+      if (!user || !bill || expenses.length === 0) {
+        return;
+      }
+
+      const key = this.storageKey(user.id, bill.id);
+      if (this.readLastSeenAt(key)) {
+        return;
+      }
+
+      const baseline = this.latestRelevantActivityAt(user.id) ?? new Date().toISOString();
+      this.writeLastSeenAt(key, baseline);
+      this.readStateVersion.update((version) => version + 1);
+    });
+  }
+
   async resetDemoData(): Promise<void> {
     await firstValueFrom(this.expenseService.adminResetData());
+  }
+
+  markActivityAsRead(): void {
+    const user = this.user();
+    const bill = this.currentBill();
+    if (!user || !bill) {
+      return;
+    }
+
+    const latest = this.latestRelevantActivityAt(user.id) ?? new Date().toISOString();
+    this.writeLastSeenAt(this.storageKey(user.id, bill.id), latest);
+    this.readStateVersion.update((version) => version + 1);
   }
 
   payerName(memberId: string): string {
@@ -135,5 +191,61 @@ export class DashboardComponent {
 
   expenseGameUrl(expense: Expense): string {
     return expense.trueAchievementsUrl || trueAchievementsGameUrl(expense.gameTitle);
+  }
+
+  isUnreadExpense(expense: Expense): boolean {
+    return this.unreadExpenseIds().has(expense.id);
+  }
+
+  private isUnreadExpenseForUser(expense: Expense, userId: string, lastSeenAt: string): boolean {
+    if (!expense.createdAt || expense.createdAt <= lastSeenAt) {
+      return false;
+    }
+
+    if (!expense.createdByProfileId) {
+      return false;
+    }
+
+    return expense.createdByProfileId !== userId;
+  }
+
+  private latestRelevantActivityAt(userId: string): string | null {
+    const createdAtValues = this.expenses()
+      .filter((expense) => expense.createdByProfileId && expense.createdByProfileId !== userId)
+      .map((expense) => expense.createdAt)
+      .filter((createdAt): createdAt is string => Boolean(createdAt));
+
+    if (createdAtValues.length === 0) {
+      return null;
+    }
+
+    return createdAtValues.reduce((latest, current) => (current > latest ? current : latest));
+  }
+
+  private storageKey(userId: string, billId: string): string {
+    return `${DashboardComponent.ACTIVITY_SEEN_STORAGE_PREFIX}:${userId}:${billId}`;
+  }
+
+  private readLastSeenAt(key: string): string | null {
+    const inMemory = this.inMemoryReadState.get(key);
+    if (inMemory) {
+      return inMemory;
+    }
+
+    try {
+      return globalThis.localStorage?.getItem(key) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeLastSeenAt(key: string, value: string): void {
+    this.inMemoryReadState.set(key, value);
+
+    try {
+      globalThis.localStorage?.setItem(key, value);
+    } catch {
+      // Ignore storage unavailability.
+    }
   }
 }

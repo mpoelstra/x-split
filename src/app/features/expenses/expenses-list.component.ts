@@ -7,6 +7,7 @@ import { ExpenseService } from '../../core/data/expense.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { Bill, Expense, Group } from '../../core/models/domain.models';
 import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
+import { compareExpensesNewestFirst } from '../../core/utils/expense-sort';
 
 type ExpenseSort = 'date_desc' | 'title_asc' | 'title_desc' | 'amount_asc' | 'amount_desc';
 
@@ -46,7 +47,7 @@ export class ExpensesListComponent {
         break;
       case 'date_desc':
       default:
-        sorted.sort((a, b) => b.expenseDate.localeCompare(a.expenseDate));
+        sorted.sort(compareExpensesNewestFirst);
         break;
     }
 

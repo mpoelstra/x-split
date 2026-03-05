@@ -43,13 +43,29 @@
     </article>
   </section>
 
+  @if (unreadExpenseCount() > 0) {
+    <section class="activity-notice">
+      <div class="notice-copy">
+        <p class="notice-title">New activity</p>
+        <p>
+          Since your last visit, {{ unreadExpenseCount() }} expense{{ unreadExpenseCount() === 1 ? '' : 's' }} have
+          been added.
+        </p>
+      </div>
+      <button type="button" class="notice-action" (click)="markActivityAsRead()">
+        <span class="material-symbols-outlined">done_all</span>
+        Mark as read
+      </button>
+    </section>
+  }
+
   <section class="activity">
     <h3>Recent Activity</h3>
     @if (recentActivity().length === 0) {
       <p>No activity yet for this bill.</p>
     } @else {
       @for (expense of recentActivity(); track expense.id) {
-        <div class="activity-row">
+        <div class="activity-row" [class.unread]="isUnreadExpense(expense)">
           <a
             class="ta-link ta-link-left"
             [href]="expenseGameUrl(expense)"
@@ -66,6 +82,12 @@
               <a class="game-link" [href]="expenseGameUrl(expense)" target="_blank" rel="noopener noreferrer">
                 {{ expense.gameTitle }}
               </a>
+              @if (isUnreadExpense(expense)) {
+                <span class="unread-tag">
+                  <span class="material-symbols-outlined">notifications</span>
+                  New
+                </span>
+              }
             </p>
             <small>{{ expense.expenseDate }}</small>
           </div>

@@ -421,10 +421,11 @@ export class SupabaseDataGateway implements IDataGateway {
       from(
           this.client
             .from('expenses')
-            .select(
+          .select(
             'id,group_id,bill_id,created_by_profile_id,game_title,trueachievements_url,amount,currency,paid_by_member_id,net_to_payer,expense_date,category,source,created_at'
           )
           .eq('bill_id', billId)
+          .order('created_at', { ascending: false })
           .order('expense_date', { ascending: false })
       ).pipe(
         map(({ data, error }) => {
