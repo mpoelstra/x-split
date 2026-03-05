@@ -169,12 +169,33 @@ as $$
   );
 $$;
 
+create or replace function public.is_bill_member(target_bill_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.bills b
+    left join public.group_members gm_friend on gm_friend.id = b.friend_member_id
+    where b.id = target_bill_id
+      and (
+        b.created_by = auth.uid()
+        or gm_friend.profile_id = auth.uid()
+      )
+  );
+$$;
+
 revoke all on function public.is_group_member(text) from public;
 revoke all on function public.shares_group_with_profile(uuid) from public;
 revoke all on function public.is_group_owner(text) from public;
+revoke all on function public.is_bill_member(uuid) from public;
 grant execute on function public.is_group_member(text) to authenticated;
 grant execute on function public.shares_group_with_profile(uuid) to authenticated;
 grant execute on function public.is_group_owner(text) to authenticated;
+grant execute on function public.is_bill_member(uuid) to authenticated;
 
 drop policy if exists "users can view profiles in shared groups" on profiles;
 drop policy if exists "users can insert profiles" on profiles;
@@ -191,6 +212,8 @@ drop policy if exists "members can view expenses" on expenses;
 drop policy if exists "members can insert expenses" on expenses;
 drop policy if exists "creators can delete expenses" on expenses;
 drop policy if exists "creators can update expenses" on expenses;
+drop policy if exists "bill members can delete expenses" on expenses;
+drop policy if exists "bill members can update expenses" on expenses;
 
 create policy "users can view profiles in shared groups"
 on profiles for select
@@ -269,19 +292,19 @@ with check (
   public.is_group_member(expenses.group_id)
 );
 
-create policy "creators can delete expenses"
+create policy "bill members can delete expenses"
 on expenses for delete
 using (
-  expenses.created_by_profile_id = auth.uid()
+  public.is_bill_member(expenses.bill_id)
 );
 
-create policy "creators can update expenses"
+create policy "bill members can update expenses"
 on expenses for update
 using (
-  expenses.created_by_profile_id = auth.uid()
+  public.is_bill_member(expenses.bill_id)
 )
 with check (
-  expenses.created_by_profile_id = auth.uid()
+  public.is_bill_member(expenses.bill_id)
 );
 
 create or replace function public.ensure_pending_member_for_bill(target_bill_id uuid)

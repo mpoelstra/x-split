@@ -112,12 +112,12 @@ export class ExpensesListComponent {
   }
 
   canDelete(expense: Expense): boolean {
-    const me = this.user();
-    if (!me) {
+    const bill = this.currentBill();
+    if (!bill || expense.billId !== bill.id) {
       return false;
     }
 
-    return expense.createdByProfileId === me.id;
+    return this.isCurrentUserBillMember(bill);
   }
 
   async deleteExpense(expense: Expense): Promise<void> {
@@ -192,5 +192,28 @@ export class ExpensesListComponent {
 
   private firstName(displayName: string): string {
     return displayName.trim().split(/\s+/)[0] ?? 'friend';
+  }
+
+  private isCurrentUserBillMember(bill: Bill): boolean {
+    const me = this.user();
+    const group = this.group();
+    if (!me || !group) {
+      return false;
+    }
+
+    if (bill.createdByProfileId && bill.createdByProfileId === me.id) {
+      return true;
+    }
+
+    const meMember = group.members.find((member) => member.profileId === me.id);
+    if (!meMember) {
+      return false;
+    }
+
+    if (bill.friendMemberId) {
+      return bill.friendMemberId === meMember.id;
+    }
+
+    return meMember.role === 'owner';
   }
 }

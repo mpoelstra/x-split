@@ -7,8 +7,15 @@ import { ExpensesListComponent } from './expenses-list.component';
 
 describe('ExpensesListComponent', () => {
   let component: ExpensesListComponent;
+  let userSignal: ReturnType<typeof signal>;
 
   beforeEach(async () => {
+    userSignal = signal({
+      id: 'u1',
+      displayName: 'Mark Poelstra',
+      email: 'mark@example.com'
+    });
+
     await TestBed.configureTestingModule({
       providers: [
         {
@@ -55,11 +62,7 @@ describe('ExpensesListComponent', () => {
         {
           provide: AuthService,
           useValue: {
-            user: signal({
-              id: 'u1',
-              displayName: 'Mark Poelstra',
-              email: 'mark@example.com'
-            })
+            user: userSignal
           }
         }
       ]
@@ -72,5 +75,27 @@ describe('ExpensesListComponent', () => {
     const expense = component.expenses()[0];
 
     expect(component.loanedLabel(expense)).toBe('You loaned Richard');
+  });
+
+  it('allows delete/edit for friend member on the current bill', () => {
+    userSignal.set({
+      id: 'u3',
+      displayName: 'Richard Booij',
+      email: 'richardbooy@gmail.com'
+    });
+    const expense = component.expenses()[0];
+
+    expect(component.canDelete(expense)).toBeTrue();
+  });
+
+  it('disallows delete/edit for group members not part of the current bill', () => {
+    userSignal.set({
+      id: 'u2',
+      displayName: 'Lucas Poelstra',
+      email: 'lucas@example.com'
+    });
+    const expense = component.expenses()[0];
+
+    expect(component.canDelete(expense)).toBeFalse();
   });
 });
