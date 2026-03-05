@@ -33,25 +33,22 @@ export class ExpenseEditComponent implements OnInit {
   private taUrlManuallyEdited = false;
   private formPatchedFromExpense = false;
 
-  private readonly moneyPattern = /^\d+(\.\d{1,2})?$/;
+  private readonly moneyPattern = /^\d+([.,]\d{1,2})?$/;
 
   private readonly validMoney = (control: AbstractControl<string>): ValidationErrors | null => {
     const raw = control.value?.trim() ?? '';
     if (!raw) {
       return { required: true };
     }
-    if (raw.includes(',')) {
-      return { commaNotAllowed: true };
-    }
     if (!this.moneyPattern.test(raw)) {
-      const decimalPart = raw.split('.')[1];
+      const decimalPart = raw.split(/[.,]/)[1];
       if (decimalPart && decimalPart.length > 2) {
         return { tooManyDecimals: true };
       }
 
       return { moneyFormat: true };
     }
-    if (Number(raw) <= 0) {
+    if (this.parseAmount(raw) <= 0) {
       return { min: true };
     }
 
@@ -79,9 +76,6 @@ export class ExpenseEditComponent implements OnInit {
     if (control.errors?.['required']) {
       return 'Amount is required.';
     }
-    if (control.errors?.['commaNotAllowed']) {
-      return 'Use a dot for decimals (example: 9.99), not a comma.';
-    }
     if (control.errors?.['tooManyDecimals']) {
       return 'Use at most 2 decimal digits.';
     }
@@ -89,7 +83,7 @@ export class ExpenseEditComponent implements OnInit {
       return 'Amount must be greater than 0.';
     }
 
-    return 'Enter a valid amount (examples: 9, 9.1, 9.99).';
+    return 'Enter a valid amount (examples: 9, 9.1, 9.99, 9,99).';
   }
 
   constructor() {
@@ -142,7 +136,7 @@ export class ExpenseEditComponent implements OnInit {
     }
 
     this.submitting.set(true);
-    const amount = Number(this.form.controls.amount.value);
+    const amount = this.parseAmount(this.form.controls.amount.value);
     const payload = {
       ...this.form.getRawValue(),
       amount,
@@ -233,5 +227,9 @@ export class ExpenseEditComponent implements OnInit {
     this.form.controls.category.setValue(expense.category || DEFAULT_EXPENSE_CATEGORY);
     this.taUrlManuallyEdited = Boolean(expense.trueAchievementsUrl);
     this.formPatchedFromExpense = true;
+  }
+
+  private parseAmount(raw: string): number {
+    return Number(raw.trim().replace(',', '.'));
   }
 }

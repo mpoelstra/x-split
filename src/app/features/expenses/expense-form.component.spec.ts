@@ -89,7 +89,7 @@ describe('ExpenseFormComponent', () => {
     expect(navigateByUrlSpy).toHaveBeenCalledWith('/app/dashboard');
   });
 
-  it('accepts 9, 9.1, 9.99 and rejects comma or >2 decimals', () => {
+  it('accepts both dot/comma decimals and rejects >2 decimals', () => {
     component.form.controls.amount.setValue('9');
     expect(component.form.controls.amount.valid).toBeTrue();
 
@@ -100,9 +100,23 @@ describe('ExpenseFormComponent', () => {
     expect(component.form.controls.amount.valid).toBeTrue();
 
     component.form.controls.amount.setValue('4,99');
-    expect(component.form.controls.amount.valid).toBeFalse();
+    expect(component.form.controls.amount.valid).toBeTrue();
 
     component.form.controls.amount.setValue('5.123');
     expect(component.form.controls.amount.valid).toBeFalse();
+  });
+
+  it('normalizes comma decimals in submit payload', async () => {
+    component.form.controls.gameTitle.setValue('Halo Infinite');
+    component.form.controls.amount.setValue('4,99');
+    component.form.controls.paidByMemberId.setValue('m1');
+    component.form.controls.expenseDate.setValue('2026-03-01');
+
+    await component.submit();
+
+    expect(addExpenseSpy).toHaveBeenCalledWith(jasmine.objectContaining({
+      amount: 4.99,
+      netToPayer: 2.5
+    }));
   });
 });

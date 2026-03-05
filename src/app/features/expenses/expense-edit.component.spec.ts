@@ -105,4 +105,16 @@ describe('ExpenseEditComponent', () => {
     }));
     expect(navigateByUrlSpy).toHaveBeenCalledWith('/app/expenses');
   });
+
+  it('normalizes comma decimals in update payload', async () => {
+    await component.ngOnInit();
+    component.form.controls.amount.setValue('9,99');
+
+    await component.submit();
+
+    expect(updateExpenseSpy).toHaveBeenCalledWith('e1', jasmine.objectContaining({
+      amount: 9.99,
+      netToPayer: 5
+    }));
+  });
 });
