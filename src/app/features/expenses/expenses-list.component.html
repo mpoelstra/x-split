@@ -48,151 +48,155 @@
   </header>
 
   @if (currentBill()) {
-    <section class="history-card">
-      <div class="row header">
-        <span class="ta-col-head">TA</span>
-        <span>Date</span>
-        <span>Game</span>
-        <span>Paid</span>
-        <span>Loaned</span>
-        <span>Type</span>
-        <span>Actions</span>
-      </div>
-      @for (expense of filteredExpenses(); track expense.id) {
-        <div class="row">
-          <div class="ta-col">
-            <a
-              class="ta-link"
-              [href]="expenseGameUrl(expense)"
-              target="_blank"
-              rel="noopener noreferrer"
-              [attr.aria-label]="'Open ' + expense.gameTitle + ' on TrueAchievements'"
-              title="Open on TrueAchievements"
-            >
-              <img src="tabadge.png" alt="TrueAchievements" />
-            </a>
-          </div>
-          <span>{{ expense.expenseDate }}</span>
-          <div class="game">
-            <strong>
-              <a [href]="expenseGameUrl(expense)" target="_blank" rel="noopener noreferrer">{{ expense.gameTitle }}</a>
-            </strong>
-            @if (expense.category) {
-              <small>{{ expense.category }}</small>
-            }
-          </div>
-          <div class="money-col">
-            <small>{{ paidLabel(expense) }}</small>
-            <strong>EUR {{ expense.amount | number : '1.2-2' }}</strong>
-          </div>
-          <div class="money-col">
-            <small>{{ loanedLabel(expense) }}</small>
-            <strong [class.loan-positive]="didCurrentUserPay(expense)" [class.loan-negative]="!didCurrentUserPay(expense)">
-              EUR {{ loanedAmount(expense) | number : '1.2-2' }}
-            </strong>
-          </div>
-          <span
-            class="pill type-pill"
-            [class.manual]="expense.source === 'manual'"
-            [class.imported]="expense.source === 'csv_import'"
-            [attr.aria-label]="expense.source === 'manual' ? 'Manual entry' : 'Imported entry'"
-            [attr.title]="expense.source === 'manual' ? 'Manual entry' : 'Imported entry'"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">
-              {{ expense.source === 'manual' ? 'edit_square' : 'upload_file' }}
-            </span>
-            <span class="type-label">{{ expense.source === 'manual' ? 'Manual' : 'Import' }}</span>
-          </span>
-          <div class="actions">
-            @if (canDelete(expense)) {
-              <a
-                class="edit-btn"
-                [routerLink]="['/app/expenses', expense.id, 'edit']"
-                title="Edit expense"
-                aria-label="Edit expense"
-              >
-                Edit
-              </a>
-              <button
-                type="button"
-                class="delete-btn"
-                [disabled]="deletingExpenseId() === expense.id"
-                (click)="deleteExpense(expense)"
-                title="Delete expense"
-                aria-label="Delete expense"
-              >
-                <span class="material-symbols-outlined">delete</span>
-              </button>
-            }
-          </div>
-        </div>
-      }
-      @if (filteredExpenses().length === 0) {
-        <div class="row empty-row">
-          <span>No expenses match your current search/filter.</span>
-        </div>
-      }
-    </section>
-
-    <section class="mobile-expenses">
-      @for (expense of filteredExpenses(); track expense.id) {
-        <article class="expense-item">
-          <div class="expense-top">
-            <a
-              class="ta-link"
-              [href]="expenseGameUrl(expense)"
-              target="_blank"
-              rel="noopener noreferrer"
-              [attr.aria-label]="'Open ' + expense.gameTitle + ' on TrueAchievements'"
-              title="Open on TrueAchievements"
-            >
-              <img src="tabadge.png" alt="TrueAchievements" />
-            </a>
-            <div class="game">
-              <strong>
-                <a [href]="expenseGameUrl(expense)" target="_blank" rel="noopener noreferrer">{{ expense.gameTitle }}</a>
-              </strong>
-              <small>{{ expense.expenseDate }}@if (expense.category) { - {{ expense.category }} }</small>
-            </div>
-            @if (canDelete(expense)) {
-              <div class="actions">
+    @if (filteredExpenses(); as expenses) {
+      @if (isMobileLayout()) {
+        <section class="mobile-expenses">
+          @for (expense of expenses; track expense.id) {
+            <article class="expense-item">
+              <div class="expense-top">
                 <a
-                  class="edit-btn icon-only"
-                  [routerLink]="['/app/expenses', expense.id, 'edit']"
-                  title="Edit expense"
-                  aria-label="Edit expense"
+                  class="ta-link"
+                  [href]="expenseGameUrl(expense)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [attr.aria-label]="'Open ' + expense.gameTitle + ' on TrueAchievements'"
+                  title="Open on TrueAchievements"
                 >
-                  <span class="material-symbols-outlined">edit</span>
+                  <img src="tabadge.png" alt="TrueAchievements" />
                 </a>
-                <button
-                  type="button"
-                  class="delete-btn"
-                  [disabled]="deletingExpenseId() === expense.id"
-                  (click)="deleteExpense(expense)"
-                  title="Delete expense"
-                  aria-label="Delete expense"
-                >
-                  <span class="material-symbols-outlined">delete</span>
-                </button>
+                <div class="game">
+                  <strong>
+                    <a [href]="expenseGameUrl(expense)" target="_blank" rel="noopener noreferrer">{{ expense.gameTitle }}</a>
+                  </strong>
+                  <small>{{ expense.expenseDate }}@if (expense.category) { - {{ expense.category }} }</small>
+                </div>
+                @if (canDelete(expense)) {
+                  <div class="actions">
+                    <a
+                      class="edit-btn icon-only"
+                      [routerLink]="['/app/expenses', expense.id, 'edit']"
+                      title="Edit expense"
+                      aria-label="Edit expense"
+                    >
+                      <span class="material-symbols-outlined">edit</span>
+                    </a>
+                    <button
+                      type="button"
+                      class="delete-btn"
+                      [disabled]="deletingExpenseId() === expense.id"
+                      (click)="deleteExpense(expense)"
+                      title="Delete expense"
+                      aria-label="Delete expense"
+                    >
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                }
               </div>
-            }
-          </div>
 
-          <div class="expense-money">
-            <span class="total-amount">EUR {{ expense.amount | number : '1.2-2' }}</span>
-            <span class="loan-chip" [class.loan-positive]="didCurrentUserPay(expense)" [class.loan-negative]="!didCurrentUserPay(expense)">
-              {{ didCurrentUserPay(expense) ? 'Loaned' : 'You owe' }} EUR {{ loanedAmount(expense) | number : '1.2-2' }}
-            </span>
-          </div>
-        </article>
-      }
+              <div class="expense-money">
+                <span class="total-amount">EUR {{ expense.amount | number : '1.2-2' }}</span>
+                <span class="loan-chip" [class.loan-positive]="didCurrentUserPay(expense)" [class.loan-negative]="!didCurrentUserPay(expense)">
+                  {{ didCurrentUserPay(expense) ? 'Loaned' : 'You owe' }} EUR {{ loanedAmount(expense) | number : '1.2-2' }}
+                </span>
+              </div>
+            </article>
+          }
 
-      @if (filteredExpenses().length === 0) {
-        <article class="expense-item empty-mobile">
-          <span>No expenses match your current search/filter.</span>
-        </article>
+          @if (expenses.length === 0) {
+            <article class="expense-item empty-mobile">
+              <span>No expenses match your current search/filter.</span>
+            </article>
+          }
+        </section>
+      } @else {
+        <section class="history-card">
+          <div class="row header">
+            <span class="ta-col-head">TA</span>
+            <span>Date</span>
+            <span>Game</span>
+            <span>Paid</span>
+            <span>Loaned</span>
+            <span>Type</span>
+            <span>Actions</span>
+          </div>
+          @for (expense of expenses; track expense.id) {
+            <div class="row">
+              <div class="ta-col">
+                <a
+                  class="ta-link"
+                  [href]="expenseGameUrl(expense)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [attr.aria-label]="'Open ' + expense.gameTitle + ' on TrueAchievements'"
+                  title="Open on TrueAchievements"
+                >
+                  <img src="tabadge.png" alt="TrueAchievements" />
+                </a>
+              </div>
+              <span>{{ expense.expenseDate }}</span>
+              <div class="game">
+                <strong>
+                  <a [href]="expenseGameUrl(expense)" target="_blank" rel="noopener noreferrer">{{ expense.gameTitle }}</a>
+                </strong>
+                @if (expense.category) {
+                  <small>{{ expense.category }}</small>
+                }
+              </div>
+              <div class="money-col">
+                <small>{{ paidLabel(expense) }}</small>
+                <strong>EUR {{ expense.amount | number : '1.2-2' }}</strong>
+              </div>
+              <div class="money-col">
+                <small>{{ loanedLabel(expense) }}</small>
+                <strong [class.loan-positive]="didCurrentUserPay(expense)" [class.loan-negative]="!didCurrentUserPay(expense)">
+                  EUR {{ loanedAmount(expense) | number : '1.2-2' }}
+                </strong>
+              </div>
+              <span
+                class="pill type-pill"
+                [class.manual]="expense.source === 'manual'"
+                [class.imported]="expense.source === 'csv_import'"
+                [attr.aria-label]="expense.source === 'manual' ? 'Manual entry' : 'Imported entry'"
+                [attr.title]="expense.source === 'manual' ? 'Manual entry' : 'Imported entry'"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">
+                  {{ expense.source === 'manual' ? 'edit_square' : 'upload_file' }}
+                </span>
+                <span class="type-label">{{ expense.source === 'manual' ? 'Manual' : 'Import' }}</span>
+              </span>
+              <div class="actions">
+                @if (canDelete(expense)) {
+                  <a
+                    class="edit-btn"
+                    [routerLink]="['/app/expenses', expense.id, 'edit']"
+                    title="Edit expense"
+                    aria-label="Edit expense"
+                  >
+                    Edit
+                  </a>
+                  <button
+                    type="button"
+                    class="delete-btn"
+                    [disabled]="deletingExpenseId() === expense.id"
+                    (click)="deleteExpense(expense)"
+                    title="Delete expense"
+                    aria-label="Delete expense"
+                  >
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+          @if (expenses.length === 0) {
+            <div class="row empty-row">
+              <span>No expenses match your current search/filter.</span>
+            </div>
+          }
+        </section>
       }
-    </section>
+    }
   } @else {
     <section class="history-card empty-card">
       <p>Create a bill first. Then history will only show expenses for that bill.</p>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -21,6 +21,7 @@ type ExpenseSort = 'date_desc' | 'title_asc' | 'title_desc' | 'amount_asc' | 'am
 export class ExpensesListComponent {
   private readonly expenseService = inject(ExpenseService);
   private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly user = this.authService.user;
   readonly group = signal<Group | null>(null);
   readonly currentBill = signal<Bill | null>(null);
@@ -28,6 +29,7 @@ export class ExpensesListComponent {
   readonly deletingExpenseId = signal<string | null>(null);
   readonly query = signal('');
   readonly sortBy = signal<ExpenseSort>('date_desc');
+  readonly isMobileLayout = signal(false);
   readonly filteredExpenses = computed(() => {
     const query = this.query().trim().toLowerCase();
     const sorted = [...this.expenses()];
@@ -59,6 +61,8 @@ export class ExpensesListComponent {
   });
 
   constructor() {
+    this.initializeViewportWatcher();
+
     this.expenseService.getCurrentGroup()
       .pipe(takeUntilDestroyed())
       .subscribe({
@@ -155,6 +159,21 @@ export class ExpensesListComponent {
 
   expenseGameUrl(expense: Expense): string {
     return expense.trueAchievementsUrl || this.gameUrl(expense.gameTitle);
+  }
+
+  private initializeViewportWatcher(): void {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 860px)');
+    const syncLayout = (event?: MediaQueryList | MediaQueryListEvent) => {
+      this.isMobileLayout.set(event?.matches ?? mediaQuery.matches);
+    };
+
+    syncLayout(mediaQuery);
+    mediaQuery.addEventListener('change', syncLayout);
+    this.destroyRef.onDestroy(() => mediaQuery.removeEventListener('change', syncLayout));
   }
 
   private memberName(memberId: string): string {
