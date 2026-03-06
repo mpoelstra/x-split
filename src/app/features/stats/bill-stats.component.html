@@ -143,6 +143,24 @@
       />
     </section>
 
+    <section class="milestones-grid">
+      <app-ranked-list-card
+        title="Joint Milestones"
+        subtitle="Shared purchase checkpoints for this bill."
+        [items]="jointMilestoneItems()"
+        emptyLabel="No milestones yet."
+      />
+
+      @for (card of memberMilestoneCards(); track card.title) {
+        <app-ranked-list-card
+          [title]="card.title"
+          [subtitle]="card.subtitle"
+          [items]="card.items"
+          emptyLabel="No milestones yet."
+        />
+      }
+    </section>
+
     <app-section-card title="Spend Over Time" subtitle="Monthly bill spend trend.">
       @if (stats().spendTimeline.length > 0) {
         <div class="chart-shell">

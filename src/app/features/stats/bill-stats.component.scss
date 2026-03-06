@@ -24,6 +24,13 @@
   gap: 12px;
 }
 
+.milestones-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 14px;
+}
+
 .main-grid,
 .cards-grid {
   display: grid;
@@ -183,10 +190,15 @@
   .summary-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .milestones-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 860px) {
   .summary-grid,
+  .milestones-grid,
   .main-grid,
   .cards-grid {
     grid-template-columns: 1fr;

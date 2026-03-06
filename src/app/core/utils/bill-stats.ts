@@ -18,6 +18,8 @@ export interface BillStatsSnapshot {
   biggestSpreeDays: SpreeDayEntry[];
   mostItemsDays: SpreeDayEntry[];
   titleLengthStats: TitleLengthStats;
+  jointMilestones: PurchaseMilestone[];
+  memberMilestones: MemberMilestones[];
   spendByPerson: PersonSpendEntry[];
   spendTimeline: TimelinePoint[];
 }
@@ -90,6 +92,18 @@ export interface TitleLengthStats {
   longest: RankedExpenseEntry | null;
 }
 
+export interface PurchaseMilestone {
+  label: string;
+  index: number;
+  purchase: RankedExpenseEntry;
+}
+
+export interface MemberMilestones {
+  memberId: string;
+  name: string;
+  milestones: PurchaseMilestone[];
+}
+
 const LOOSE_TITLE_NOISE = new Set([
   'digital',
   'bundle',
@@ -121,8 +135,8 @@ export function buildBillStats(expenses: Expense[], members: GroupMember[]): Bil
   const nameMap = new Map(members.map((member) => [member.id, firstName(member.displayName)]));
   const duplicateGroups = buildDuplicateGroups(expenses, nameMap);
   const nearDuplicateGroups = buildNearDuplicateGroups(expenses);
-
   const spreeDays = buildSpreeDays(expenses);
+  const orderedExpenses = [...expenses].sort(compareExpenseSequence);
 
   return {
     currency,
@@ -152,6 +166,8 @@ export function buildBillStats(expenses: Expense[], members: GroupMember[]): Bil
       .sort((a, b) => b.purchaseCount - a.purchaseCount || b.totalSpend - a.totalSpend || compareDateDesc(a.date, b.date))
       .slice(0, 5),
     titleLengthStats: buildTitleLengthStats(expenses, nameMap),
+    jointMilestones: buildMilestones(orderedExpenses, nameMap, 100),
+    memberMilestones: buildMemberMilestones(orderedExpenses, members, nameMap),
     spendByPerson: buildSpendByPerson(expenses, members),
     spendTimeline: buildTimeline(expenses)
   };
@@ -293,6 +309,44 @@ function buildTitleLengthStats(expenses: Expense[], nameMap: Map<string, string>
   };
 }
 
+function buildMilestones(expenses: Expense[], nameMap: Map<string, string>, stepAfter50: number): PurchaseMilestone[] {
+  return milestoneTargets(expenses.length, stepAfter50)
+    .map((target) => {
+      const expense = expenses[target - 1];
+      if (!expense) {
+        return null;
+      }
+
+      return {
+        label: ordinal(target),
+        index: target,
+        purchase: rankedExpenseEntry(expense, nameMap)
+      };
+    })
+    .filter((entry): entry is PurchaseMilestone => entry !== null);
+}
+
+function buildMemberMilestones(
+  orderedExpenses: Expense[],
+  members: GroupMember[],
+  nameMap: Map<string, string>
+): MemberMilestones[] {
+  const memberIdsInBill = new Set(orderedExpenses.map((expense) => expense.paidByMemberId));
+
+  return members
+    .filter((member) => memberIdsInBill.has(member.id))
+    .map((member) => {
+      const memberExpenses = orderedExpenses.filter((expense) => expense.paidByMemberId === member.id);
+      return {
+        memberId: member.id,
+        name: nameMap.get(member.id) ?? 'Member',
+        milestones: buildMilestones(memberExpenses, nameMap, 50)
+      };
+    })
+    .filter((entry) => entry.milestones.length > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function longestWeeklyStreak(expenses: Expense[]): number {
   const weekStarts = [...new Set(expenses.map((expense) => weekStartKey(expense.expenseDate)))]
     .map((date) => new Date(`${date}T00:00:00Z`).getTime())
@@ -341,6 +395,14 @@ function firstName(displayName: string): string {
 
 function compareDateDesc(a: string, b: string): number {
   return b.localeCompare(a);
+}
+
+function compareExpenseSequence(a: Expense, b: Expense): number {
+  return (
+    a.expenseDate.localeCompare(b.expenseDate) ||
+    (a.createdAt ?? '').localeCompare(b.createdAt ?? '') ||
+    a.id.localeCompare(b.id)
+  );
 }
 
 function median(values: number[]): number {
@@ -394,4 +456,30 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
 
 function normalizeWhitespace(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
+}
+
+function milestoneTargets(total: number, stepAfter50: number): number[] {
+  const targets = [1, 10, 50];
+  for (let current = 100; current <= total; current += stepAfter50) {
+    targets.push(current);
+  }
+  return targets.filter((target) => target <= total);
+}
+
+function ordinal(value: number): string {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) {
+    return `${value}th`;
+  }
+
+  switch (value % 10) {
+    case 1:
+      return `${value}st`;
+    case 2:
+      return `${value}nd`;
+    case 3:
+      return `${value}rd`;
+    default:
+      return `${value}th`;
+  }
 }

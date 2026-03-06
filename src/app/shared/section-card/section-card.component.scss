@@ -9,6 +9,8 @@
   border-radius: 18px;
   padding: 18px;
   display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: start;
   gap: 16px;
   height: 100%;
 }
@@ -33,5 +35,8 @@
 }
 
 .section-body {
+  display: grid;
+  align-content: start;
+  align-items: start;
   min-width: 0;
 }

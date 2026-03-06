@@ -142,6 +142,28 @@ export class BillStatsComponent {
     return items;
   });
 
+  readonly jointMilestoneItems = computed<RankedListItem[]>(() =>
+    this.stats().jointMilestones.map((milestone) => ({
+      label: milestone.label,
+      href: this.gameUrl(milestone.purchase.title, milestone.purchase.trueAchievementsUrl),
+      value: milestone.purchase.expenseDate,
+      detail: `${milestone.purchase.payerName} • ${milestone.purchase.title}`
+    }))
+  );
+
+  readonly memberMilestoneCards = computed(() =>
+    this.stats().memberMilestones.map((entry) => ({
+      title: `${entry.name} Milestones`,
+      subtitle: `Purchase checkpoints for ${entry.name.toLowerCase()}.`,
+      items: entry.milestones.map((milestone) => ({
+        label: milestone.label,
+        href: this.gameUrl(milestone.purchase.title, milestone.purchase.trueAchievementsUrl),
+        value: milestone.purchase.expenseDate,
+        detail: milestone.purchase.title
+      }))
+    }))
+  );
+
   readonly chartData = computed<ChartData<'line'>>(() => ({
     labels: this.stats().spendTimeline.map((point) => point.label),
     datasets: [
