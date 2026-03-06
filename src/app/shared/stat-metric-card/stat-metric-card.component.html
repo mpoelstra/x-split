@@ -1,0 +1,7 @@
+<article class="metric-card">
+  <span class="label">{{ label() }}</span>
+  <strong class="value">{{ value() }}</strong>
+  @if (detail()) {
+    <small class="detail">{{ detail() }}</small>
+  }
+</article>

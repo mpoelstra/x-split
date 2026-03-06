@@ -1,0 +1,160 @@
+<div class="stats-page">
+  <header class="stats-head">
+    <div>
+      <h1>Bill Stats</h1>
+      @if (currentBill(); as bill) {
+        <p>Geeky purchase stats for "{{ bill.title }}". Duplicate hunting, streaks, bargains, and spend patterns.</p>
+      } @else {
+        <p>Select or create a bill to unlock stats.</p>
+      }
+    </div>
+  </header>
+
+  @if (currentBill()) {
+    <section class="summary-grid">
+      @for (metric of summaryMetrics(); track metric.label) {
+        <app-stat-metric-card [label]="metric.label" [value]="metric.value" [detail]="metric.detail" />
+      }
+    </section>
+
+    <section class="main-grid">
+      <app-section-card
+        class="duplicates-card"
+        title="Duplicates"
+        subtitle="Exact title matches across this bill. Useful for spotting double-dips fast."
+      >
+        @if (stats().duplicateGroups.length > 0) {
+          <div class="duplicate-groups">
+            @for (group of stats().duplicateGroups; track group.normalizedTitle) {
+              <article class="duplicate-group">
+                <div class="group-head">
+                  <div>
+                    <h3>{{ group.label }}</h3>
+                    <p>{{ group.purchaseCount }} purchases • {{ group.totalSpend | currency:stats().currency:'symbol':'1.2-2' }}</p>
+                  </div>
+                  <span class="count-badge">{{ group.purchaseCount }}x</span>
+                </div>
+
+                <ul>
+                  @for (item of group.items; track item.id) {
+                    <li>
+                      <a
+                        class="item-title"
+                        [href]="gameUrl(item.title, item.trueAchievementsUrl)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ item.title }}
+                      </a>
+                      <span class="item-meta">{{ item.payerName }} • {{ item.expenseDate }}</span>
+                      <strong>{{ item.amount | currency:stats().currency:'symbol':'1.2-2' }}</strong>
+                    </li>
+                  }
+                </ul>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="empty-copy">No exact duplicates yet. Either your tastes are perfectly coordinated or the imports are too clean.</p>
+        }
+      </app-section-card>
+
+      <app-section-card
+        class="near-duplicates-card"
+        title="Near-Duplicate Titles"
+        subtitle="Loose matches that look like the same game with platform or edition noise."
+      >
+        @if (stats().nearDuplicateGroups.length > 0) {
+          <div class="near-groups">
+            @for (group of stats().nearDuplicateGroups; track group.looseKey) {
+              <article class="near-group">
+                <div class="group-head">
+                  <div>
+                    <h3>{{ group.label }}</h3>
+                    <p>{{ group.purchaseCount }} purchases • {{ group.totalSpend | currency:stats().currency:'symbol':'1.2-2' }}</p>
+                  </div>
+                </div>
+
+                <ul>
+                  @for (variant of group.variants; track variant.label) {
+                    <li>
+                      <a
+                        class="variant-link"
+                        [href]="gameUrl(variant.label, variant.trueAchievementsUrl)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ variant.label }}
+                      </a>
+                      <span>{{ variant.purchaseCount }}x • {{ variant.totalSpend | currency:stats().currency:'symbol':'1.2-2' }}</span>
+                    </li>
+                  }
+                </ul>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="empty-copy">No convincing near-duplicates detected yet.</p>
+        }
+      </app-section-card>
+    </section>
+
+    <section class="cards-grid">
+      <app-ranked-list-card
+        title="Premium Taste Score"
+        subtitle="Largest single purchases in the bill. The pricey side of the collection."
+        [items]="mostExpensiveItems()"
+        emptyLabel="No purchases yet."
+      />
+
+      <app-ranked-list-card
+        title="Bargain Hunter Score"
+        subtitle="Budget wins and tiny pickups."
+        [items]="cheapestItems()"
+        emptyLabel="No purchases yet."
+      />
+
+      <app-ranked-list-card
+        title="Biggest Single-Day Spree"
+        subtitle="Dates with the highest total spend."
+        [items]="spreeItems()"
+        emptyLabel="No spending days yet."
+      />
+
+      <app-ranked-list-card
+        title="Most Games Bought In One Day"
+        subtitle="Dates with the highest number of games purchased."
+        [items]="mostItemsDayItems()"
+        emptyLabel="No purchase days yet."
+      />
+
+      <app-ranked-list-card
+        title="Spend Per Person"
+        subtitle="Who did the damage in this bill."
+        [items]="spendByPersonItems()"
+        emptyLabel="No payer data yet."
+      />
+
+      <app-ranked-list-card
+        title="The Long and Short of It"
+        subtitle="Shortest and longest titles in the bill."
+        [items]="titleLengthItems()"
+        emptyLabel="No titles yet."
+      />
+    </section>
+
+    <app-section-card title="Spend Over Time" subtitle="Monthly bill spend trend.">
+      @if (stats().spendTimeline.length > 0) {
+        <div class="chart-shell">
+          <canvas baseChart [type]="chartType" [data]="chartData()" [options]="chartOptions"></canvas>
+        </div>
+      } @else {
+        <p class="empty-copy">No trend data yet.</p>
+      }
+    </app-section-card>
+  } @else {
+    <app-section-card title="No Bill Selected" subtitle="Stats are always scoped to the currently selected bill.">
+      <p class="empty-copy">Create a bill first, then the stats page will light up with duplicates, streaks, spend splits, and timeline data.</p>
+    </app-section-card>
+  }
+</div>

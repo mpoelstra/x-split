@@ -1,0 +1,35 @@
+<app-section-card [title]="title()" [subtitle]="subtitle()">
+  @if (items().length > 0) {
+    <ol class="ranked-list">
+      @for (item of items(); track item.label + item.value + (item.detail ?? '')) {
+        <li>
+          <div class="copy">
+            <strong>
+              @if (item.href) {
+                <a [href]="item.href" target="_blank" rel="noopener noreferrer">{{ item.label }}</a>
+              } @else {
+                {{ item.label }}
+              }
+            </strong>
+            @if (item.detailParts?.length) {
+              <small>
+                @for (part of item.detailParts; track part.label + (part.href ?? '')) {
+                  @if (part.href) {
+                    <a [href]="part.href" target="_blank" rel="noopener noreferrer">{{ part.label }}</a>
+                  } @else {
+                    <span>{{ part.label }}</span>
+                  }
+                }
+              </small>
+            } @else if (item.detail) {
+              <small>{{ item.detail }}</small>
+            }
+          </div>
+          <span class="value">{{ item.value }}</span>
+        </li>
+      }
+    </ol>
+  } @else {
+    <p class="empty">{{ emptyLabel() }}</p>
+  }
+</app-section-card>

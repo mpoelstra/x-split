@@ -221,6 +221,17 @@
   text-decoration: none;
 }
 
+.stats-link {
+  border-radius: 10px;
+  border: 1px solid rgba(122, 122, 16, 0.24);
+  background: rgba(137, 147, 17, 0.14);
+  color: #c7d46d;
+  text-decoration: none;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
 .profile-name {
   color: #d6ddd0;
   font-size: 0.82rem;

@@ -1,0 +1,15 @@
+<section class="section-card">
+  <header class="section-head">
+    <div>
+      <h2>{{ title() }}</h2>
+      @if (subtitle()) {
+        <p>{{ subtitle() }}</p>
+      }
+    </div>
+    <ng-content select="[card-actions]"></ng-content>
+  </header>
+
+  <div class="section-body">
+    <ng-content></ng-content>
+  </div>
+</section>
