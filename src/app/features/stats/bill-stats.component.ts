@@ -7,6 +7,8 @@ import { RankedListCardComponent, RankedListItem } from '../../shared/ranked-lis
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { StatMetricCardComponent } from '../../shared/stat-metric-card/stat-metric-card.component';
 import { trueAchievementsGameUrl } from '../../core/utils/trueachievements-link';
+import { compareExpensesNewestFirst } from '../../core/utils/expense-sort';
+import { Expense } from '../../core/models/domain.models';
 
 @Component({
   selector: 'app-bill-stats',
@@ -27,6 +29,7 @@ export class BillStatsComponent {
 
   readonly currentBill = this.billStatsService.currentBill;
   readonly stats = this.billStatsService.stats;
+  readonly expenses = this.billStatsService.expenses;
   readonly chartType = 'line' as const;
 
   readonly summaryMetrics = computed(() => {
@@ -164,6 +167,52 @@ export class BillStatsComponent {
     }))
   );
 
+  readonly orderedExpenses = computed(() => [...this.expenses()].sort(compareExpensesNewestFirst));
+
+  readonly randomGamePick = computed(() => {
+    const expenses = this.orderedExpenses();
+    const billId = this.currentBill()?.id ?? 'bill';
+    if (expenses.length === 0) {
+      return null;
+    }
+
+    const index = stableIndex(`${billId}:${dailySeed()}:random-game`, expenses.length);
+    const expense = expenses[index] ?? expenses[0];
+    if (!expense) {
+      return null;
+    }
+
+    return {
+      expense,
+      position: index + 1,
+      total: expenses.length
+    };
+  });
+
+  readonly weirdTitlePick = computed(() => {
+    const expenses = this.expenses();
+    const billId = this.currentBill()?.id ?? 'bill';
+    if (expenses.length === 0) {
+      return null;
+    }
+
+    const ranked = [...expenses]
+      .map((expense) => ({ expense, score: weirdTitleScore(expense.gameTitle) }))
+      .sort((a, b) => b.score - a.score || b.expense.gameTitle.length - a.expense.gameTitle.length || a.expense.id.localeCompare(b.expense.id));
+    const candidates = ranked.filter((entry) => entry.score > 0).slice(0, 8);
+    const pool = candidates.length > 0 ? candidates : ranked.slice(0, Math.min(8, ranked.length));
+    const index = stableIndex(`${billId}:${dailySeed()}:weird-title`, pool.length);
+    const selected = pool[index];
+    if (!selected) {
+      return null;
+    }
+
+    return {
+      expense: selected.expense,
+      reason: weirdTitleReason(selected.expense.gameTitle)
+    };
+  });
+
   readonly chartData = computed<ChartData<'line'>>(() => ({
     labels: this.stats().spendTimeline.map((point) => point.label),
     datasets: [
@@ -229,4 +278,47 @@ function formatCurrency(value: number, currency: string): string {
     maximumFractionDigits: 2,
     minimumFractionDigits: 2
   }).format(value);
+}
+
+function stableIndex(seed: string, length: number): number {
+  if (length <= 0) {
+    return 0;
+  }
+
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(index)) | 0;
+  }
+
+  return Math.abs(hash) % length;
+}
+
+function dailySeed(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function weirdTitleScore(title: string): number {
+  const punctuationMatches = title.match(/[:\-!&'.,/]/g) ?? [];
+  const digitMatches = title.match(/\d/g) ?? [];
+  const wordCount = title.trim().split(/\s+/).filter(Boolean).length;
+  const uppercaseTokens = title.split(/\s+/).filter((token) => token.length >= 2 && token === token.toUpperCase()).length;
+
+  return punctuationMatches.length * 3 + digitMatches.length * 2 + Math.max(wordCount - 3, 0) + uppercaseTokens * 2;
+}
+
+function weirdTitleReason(title: string): string {
+  const wordCount = title.trim().split(/\s+/).filter(Boolean).length;
+  if (/\d/.test(title) && /[:\-]/.test(title)) {
+    return 'Numbers and punctuation chaos.';
+  }
+  if (wordCount >= 6) {
+    return 'This title refuses to be brief.';
+  }
+  if (/[:\-]/.test(title)) {
+    return 'Subtitle energy detected.';
+  }
+  if (/[!&]/.test(title)) {
+    return 'Extra punctuation for dramatic effect.';
+  }
+  return 'A gloriously odd-looking name.';
 }

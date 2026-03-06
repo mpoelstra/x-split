@@ -161,6 +161,50 @@
       }
     </section>
 
+    <section class="spotlight-grid">
+      <app-section-card title="Daily Random Bill Pick" subtitle="A daily random game from this bill, using the default expenses ordering.">
+        @if (randomGamePick(); as pick) {
+          <article class="spotlight-card">
+            <span class="spotlight-badge">Daily random • #{{ pick.position }} of {{ pick.total }}</span>
+            <h3>
+              <a [href]="gameUrl(pick.expense.gameTitle, pick.expense.trueAchievementsUrl)" target="_blank" rel="noopener noreferrer">
+                {{ pick.expense.gameTitle }}
+              </a>
+            </h3>
+            <p class="spotlight-copy">
+              This one currently sits at position {{ pick.position }} in the default newest-first expenses list.
+            </p>
+            <div class="spotlight-meta">
+              <span>{{ pick.expense.expenseDate }}</span>
+              <strong>{{ pick.expense.amount | currency:stats().currency:'symbol':'1.2-2' }}</strong>
+            </div>
+          </article>
+        } @else {
+          <p class="empty-copy">No expenses yet.</p>
+        }
+      </app-section-card>
+
+      <app-section-card title="Daily Weird Title Pick" subtitle="A daily random pick from the strangest-looking names in the bill.">
+        @if (weirdTitlePick(); as pick) {
+          <article class="spotlight-card">
+            <span class="spotlight-badge">Daily random weird pick</span>
+            <h3>
+              <a [href]="gameUrl(pick.expense.gameTitle, pick.expense.trueAchievementsUrl)" target="_blank" rel="noopener noreferrer">
+                {{ pick.expense.gameTitle }}
+              </a>
+            </h3>
+            <p class="spotlight-copy">{{ pick.reason }}</p>
+            <div class="spotlight-meta">
+              <span>{{ pick.expense.expenseDate }}</span>
+              <strong>{{ pick.expense.amount | currency:stats().currency:'symbol':'1.2-2' }}</strong>
+            </div>
+          </article>
+        } @else {
+          <p class="empty-copy">No titles yet.</p>
+        }
+      </app-section-card>
+    </section>
+
     <app-section-card title="Spend Over Time" subtitle="Monthly bill spend trend.">
       @if (stats().spendTimeline.length > 0) {
         <div class="chart-shell">
