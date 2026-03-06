@@ -88,13 +88,12 @@ export class BillStatsComponent {
     this.stats().biggestSpreeDays.map((day) => ({
       label: day.date,
       value: formatCurrency(day.totalSpend, this.stats().currency),
-      detailParts: [
-        { label: `${day.purchaseCount} purchases • ` },
-        ...day.titles.map((title, index) => ({
-          label: `${index > 0 ? ', ' : ''}${title}`,
-          href: this.gameUrl(title)
-        }))
-      ]
+      detailPrefix: `${day.purchaseCount} purchases • `,
+      detailParts: day.titles.map((title, index) => ({
+        label: `${index > 0 ? ', ' : ''}${title}`,
+        href: this.gameUrl(title)
+      })),
+      detailCollapseLimit: 4
     }))
   );
 
@@ -113,7 +112,8 @@ export class BillStatsComponent {
       detailParts: day.titles.map((title, index) => ({
         label: `${index > 0 ? ', ' : ''}${title}`,
         href: this.gameUrl(title)
-      }))
+      })),
+      detailCollapseLimit: 4
     }))
   );
 

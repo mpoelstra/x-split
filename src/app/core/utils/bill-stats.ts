@@ -228,7 +228,7 @@ function buildSpreeDays(expenses: Expense[]): SpreeDayEntry[] {
       date,
       totalSpend: sum(items.map((item) => item.amount)),
       purchaseCount: items.length,
-      titles: [...new Set(items.map((item) => item.gameTitle))].slice(0, 4)
+      titles: [...new Set(items.map((item) => item.gameTitle))]
     }));
 }
 

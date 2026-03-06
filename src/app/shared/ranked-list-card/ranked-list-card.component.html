@@ -13,12 +13,24 @@
             </strong>
             @if (item.detailParts?.length) {
               <small>
-                @for (part of item.detailParts; track part.label + (part.href ?? '')) {
+                @if (item.detailPrefix) {
+                  <span>{{ item.detailPrefix }}</span>
+                }
+                @for (part of visibleDetailParts(item); track part.label + (part.href ?? '')) {
                   @if (part.href) {
                     <a [href]="part.href" target="_blank" rel="noopener noreferrer">{{ part.label }}</a>
                   } @else {
                     <span>{{ part.label }}</span>
                   }
+                }
+                @if (hasHiddenDetailParts(item)) {
+                  <button type="button" class="expand-toggle" (click)="toggleExpanded(item)">
+                    @if (isExpanded(item)) {
+                      Show less
+                    } @else {
+                      +{{ hiddenDetailCount(item) }} more
+                    }
+                  </button>
                 }
               </small>
             } @else if (item.detail) {
