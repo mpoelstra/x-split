@@ -148,9 +148,14 @@ export class BillStatsComponent {
   readonly jointMilestoneItems = computed<RankedListItem[]>(() =>
     this.stats().jointMilestones.map((milestone) => ({
       label: milestone.label,
-      href: this.gameUrl(milestone.purchase.title, milestone.purchase.trueAchievementsUrl),
       value: milestone.purchase.expenseDate,
-      detail: `${milestone.purchase.payerName} • ${milestone.purchase.title}`
+      detailParts: [
+        { label: `${milestone.purchase.payerName} • ` },
+        {
+          label: milestone.purchase.title,
+          href: this.gameUrl(milestone.purchase.title, milestone.purchase.trueAchievementsUrl)
+        }
+      ]
     }))
   );
 
@@ -160,9 +165,13 @@ export class BillStatsComponent {
       subtitle: `Purchase checkpoints for ${entry.name.toLowerCase()}.`,
       items: entry.milestones.map((milestone) => ({
         label: milestone.label,
-        href: this.gameUrl(milestone.purchase.title, milestone.purchase.trueAchievementsUrl),
         value: milestone.purchase.expenseDate,
-        detail: milestone.purchase.title
+        detailParts: [
+          {
+            label: milestone.purchase.title,
+            href: this.gameUrl(milestone.purchase.title, milestone.purchase.trueAchievementsUrl)
+          }
+        ]
       }))
     }))
   );
