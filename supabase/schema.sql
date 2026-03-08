@@ -188,14 +188,36 @@ as $$
   );
 $$;
 
+create or replace function public.is_bill_participant_member(target_bill_id uuid, target_member_id text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.bills b
+    join public.group_members gm_target on gm_target.id = target_member_id
+    where b.id = target_bill_id
+      and gm_target.group_id = b.group_id
+      and (
+        gm_target.profile_id = b.created_by
+        or gm_target.id = b.friend_member_id
+      )
+  );
+$$;
+
 revoke all on function public.is_group_member(text) from public;
 revoke all on function public.shares_group_with_profile(uuid) from public;
 revoke all on function public.is_group_owner(text) from public;
 revoke all on function public.is_bill_member(uuid) from public;
+revoke all on function public.is_bill_participant_member(uuid, text) from public;
 grant execute on function public.is_group_member(text) to authenticated;
 grant execute on function public.shares_group_with_profile(uuid) to authenticated;
 grant execute on function public.is_group_owner(text) to authenticated;
 grant execute on function public.is_bill_member(uuid) to authenticated;
+grant execute on function public.is_bill_participant_member(uuid, text) to authenticated;
 
 drop policy if exists "users can view profiles in shared groups" on profiles;
 drop policy if exists "users can insert profiles" on profiles;
@@ -252,7 +274,7 @@ with check (
 create policy "members can view bills"
 on bills for select
 using (
-  public.is_group_member(bills.group_id)
+  public.is_bill_member(bills.id)
 );
 
 create policy "members can insert bills"
@@ -270,26 +292,28 @@ using (
 create policy "users can view invites"
 on invites for select
 using (
-  public.is_group_member(invites.group_id)
+  (invites.bill_id is not null and public.is_bill_member(invites.bill_id))
   or lower(invites.invite_email) = lower(coalesce(auth.jwt()->>'email', ''))
 );
 
 create policy "members can insert invites"
 on invites for insert
 with check (
-  public.is_group_member(invites.group_id)
+  invites.bill_id is not null
+  and public.is_bill_member(invites.bill_id)
 );
 
 create policy "members can view expenses"
 on expenses for select
 using (
-  public.is_group_member(expenses.group_id)
+  public.is_bill_member(expenses.bill_id)
 );
 
 create policy "members can insert expenses"
 on expenses for insert
 with check (
-  public.is_group_member(expenses.group_id)
+  public.is_bill_member(expenses.bill_id)
+  and public.is_bill_participant_member(expenses.bill_id, expenses.paid_by_member_id)
 );
 
 create policy "bill members can delete expenses"
@@ -305,6 +329,7 @@ using (
 )
 with check (
   public.is_bill_member(expenses.bill_id)
+  and public.is_bill_participant_member(expenses.bill_id, expenses.paid_by_member_id)
 );
 
 create or replace function public.ensure_pending_member_for_bill(target_bill_id uuid)

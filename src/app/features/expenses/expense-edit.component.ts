@@ -55,7 +55,7 @@ export class ExpenseEditComponent implements OnInit {
     return null;
   };
 
-  readonly memberOptions = computed(() => this.group()?.members ?? []);
+  readonly memberOptions = computed(() => this.expenseService.getBillMembers(this.group(), this.currentBill()));
 
   readonly form = this.fb.nonNullable.group({
     gameTitle: ['', Validators.required],
@@ -132,6 +132,11 @@ export class ExpenseEditComponent implements OnInit {
   async submit(): Promise<void> {
     this.form.markAllAsTouched();
     if (this.form.invalid || !this.expense()) {
+      return;
+    }
+
+    if (!this.memberOptions().some((member) => member.id === this.form.controls.paidByMemberId.value)) {
+      this.form.controls.paidByMemberId.setErrors({ invalidMember: true });
       return;
     }
 

@@ -51,7 +51,7 @@ export class ExpenseFormComponent {
     return null;
   };
 
-  readonly memberOptions = computed(() => this.group()?.members ?? []);
+  readonly memberOptions = computed(() => this.expenseService.getBillMembers(this.group(), this.currentBill()));
 
   readonly form = this.fb.nonNullable.group({
     gameTitle: ['', Validators.required],
@@ -107,14 +107,14 @@ export class ExpenseFormComponent {
     });
 
     effect(() => {
-      const group = this.group();
-      if (!group || group.members.length === 0) {
+      const members = this.memberOptions();
+      if (members.length === 0) {
         return;
       }
 
       const me = this.user();
       const selectedMemberId = this.form.controls.paidByMemberId.value;
-      const meMemberId = me ? group.members.find((member) => member.profileId === me.id)?.id : undefined;
+      const meMemberId = me ? members.find((member) => member.profileId === me.id)?.id : undefined;
 
       if (meMemberId) {
         if (!selectedMemberId || (this.form.controls.paidByMemberId.pristine && selectedMemberId !== meMemberId)) {
@@ -123,8 +123,9 @@ export class ExpenseFormComponent {
         return;
       }
 
-      if (!selectedMemberId) {
-        this.form.controls.paidByMemberId.setValue(group.members[0].id);
+      const selectedStillValid = members.some((member) => member.id === selectedMemberId);
+      if (!selectedStillValid) {
+        this.form.controls.paidByMemberId.setValue(members[0].id);
       }
     });
   }
@@ -140,6 +141,11 @@ export class ExpenseFormComponent {
     }
 
     const amount = this.parseAmount(this.form.controls.amount.value);
+    if (!this.memberOptions().some((member) => member.id === this.form.controls.paidByMemberId.value)) {
+      this.form.controls.paidByMemberId.setErrors({ invalidMember: true });
+      return;
+    }
+
     this.submitting.set(true);
     const payload = {
       ...this.form.getRawValue(),

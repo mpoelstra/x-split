@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { DATA_GATEWAY } from './data-gateway';
 import {
   BalanceSummary,
@@ -7,8 +8,10 @@ import {
   CreateExpenseInput,
   Expense,
   Group,
+  GroupMember,
   UpdateExpenseInput
 } from '../models/domain.models';
+import { AuthService } from '../auth/auth.service';
 import {
   BehaviorSubject,
   Observable,
@@ -27,18 +30,24 @@ import { calculateBalances } from '../utils/balance-calculator';
 export class ExpenseService {
   private static readonly BILL_STORAGE_KEY = 'xsplit:selected-bill-id';
   private readonly gateway = inject(DATA_GATEWAY);
+  private readonly authService = inject(AuthService);
   private readonly billSelectionChangedSubject = new Subject<string>();
   private readonly refreshSubject = new BehaviorSubject<void>(undefined);
   private readonly selectedBillIdSubject = new BehaviorSubject<string | null>(this.readPersistedBillId());
   private readonly expensesRefreshSubject = new BehaviorSubject<void>(undefined);
   private syncedGatewayBillId: string | null = null;
+  private readonly currentUser$ = toObservable(this.authService.user);
 
   private readonly currentGroup$ = this.refreshSubject.pipe(
     switchMap(() => this.gateway.getCurrentGroup()),
     shareReplay({ bufferSize: 1, refCount: true })
   );
-  private readonly bills$ = this.currentGroup$.pipe(
-    switchMap(() => this.gateway.getBills()),
+  private readonly bills$ = combineLatest([this.currentGroup$, this.currentUser$]).pipe(
+    switchMap(([group, user]) =>
+      this.gateway.getBills().pipe(
+        map((bills) => bills.filter((bill) => this.isBillAccessibleToUser(group, user?.id ?? null, bill)))
+      )
+    ),
     shareReplay({ bufferSize: 1, refCount: true })
   );
   private readonly currentBill$ = combineLatest([this.bills$, this.selectedBillIdSubject]).pipe(
@@ -227,16 +236,42 @@ export class ExpenseService {
     }
   }
 
-  private resolveBalanceMembers(group: Group, currentBill: Bill | null, expenses: Expense[]): Group['members'] {
+  getBillMembers(group: Group | null, currentBill: Bill | null): GroupMember[] {
+    if (!group || !currentBill) {
+      return [];
+    }
+
     if (group.members.length <= 2) {
       return group.members;
     }
 
     const participantIds = new Set<string>();
+    const ownerMember = group.members.find((member) => member.profileId === currentBill.createdByProfileId)
+      ?? group.members.find((member) => member.role === 'owner')
+      ?? group.members[0];
+    if (ownerMember) {
+      participantIds.add(ownerMember.id);
+    }
 
-    if (currentBill?.friendMemberId) {
+    if (currentBill.friendMemberId) {
       participantIds.add(currentBill.friendMemberId);
     }
+
+    const scopedMembers = group.members.filter((member) => participantIds.has(member.id));
+    if (scopedMembers.length > 0) {
+      return scopedMembers;
+    }
+
+    return group.members;
+  }
+
+  private resolveBalanceMembers(group: Group, currentBill: Bill | null, expenses: Expense[]): Group['members'] {
+    const billMembers = this.getBillMembers(group, currentBill);
+    if (billMembers.length === 2) {
+      return billMembers;
+    }
+
+    const participantIds = new Set<string>(billMembers.map((member) => member.id));
 
     for (const expense of expenses) {
       participantIds.add(expense.paidByMemberId);
@@ -255,5 +290,26 @@ export class ExpenseService {
     }
 
     return group.members;
+  }
+
+  private isBillAccessibleToUser(group: Group, userId: string | null, bill: Bill): boolean {
+    if (!userId) {
+      return false;
+    }
+
+    if (bill.createdByProfileId === userId) {
+      return true;
+    }
+
+    const meMember = group.members.find((member) => member.profileId === userId);
+    if (!meMember) {
+      return false;
+    }
+
+    if (bill.friendMemberId) {
+      return bill.friendMemberId === meMember.id || meMember.role === 'owner';
+    }
+
+    return meMember.role === 'owner';
   }
 }

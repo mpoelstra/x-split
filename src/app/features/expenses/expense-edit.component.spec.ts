@@ -3,8 +3,13 @@ import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { ExpenseService } from '../../core/data/expense.service';
 import { ExpenseEditComponent } from './expense-edit.component';
+import { AuthService } from '../../core/auth/auth.service';
 
 describe('ExpenseEditComponent', () => {
+  const billMembers = [
+    { id: 'm1', profileId: 'u1', displayName: 'Mark', role: 'owner' as const },
+    { id: 'm2', profileId: 'u2', displayName: 'Andrea', role: 'member' as const }
+  ];
   const expense = {
     id: 'e1',
     groupId: 'g1',
@@ -42,8 +47,8 @@ describe('ExpenseEditComponent', () => {
                 id: 'g1',
                 name: 'X-Split',
                 members: [
-                  { id: 'm1', profileId: 'u1', displayName: 'Mark', role: 'owner' },
-                  { id: 'm2', profileId: 'u2', displayName: 'Andrea', role: 'member' }
+                  ...billMembers,
+                  { id: 'm3', profileId: 'u3', displayName: 'Lucas', role: 'member' }
                 ]
               }),
             getCurrentBill: () =>
@@ -51,17 +56,26 @@ describe('ExpenseEditComponent', () => {
                 id: 'b1',
                 groupId: 'g1',
                 title: 'Xbox Games',
+                createdByProfileId: 'u1',
+                friendMemberId: 'm2',
                 friendName: 'Andrea',
                 createdAt: '2026-03-01T00:00:00Z'
               }),
             getExpenseById: getExpenseByIdSpy,
-            updateExpense: updateExpenseSpy
+            updateExpense: updateExpenseSpy,
+            getBillMembers: () => billMembers
           }
         },
         {
           provide: Router,
           useValue: {
             navigateByUrl: navigateByUrlSpy
+          }
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            user: () => ({ id: 'u1', displayName: 'Mark', email: 'mark@example.com' })
           }
         },
         {
@@ -116,5 +130,11 @@ describe('ExpenseEditComponent', () => {
       amount: 9.99,
       netToPayer: 5
     }));
+  });
+
+  it('limits payer options to members on the active bill', async () => {
+    await component.ngOnInit();
+
+    expect(component.memberOptions().map((member) => member.id)).toEqual(['m1', 'm2']);
   });
 });

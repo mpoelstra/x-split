@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { combineLatest, firstValueFrom, of, take } from 'rxjs';
 import {
@@ -8,6 +9,7 @@ import {
   Group,
   UpdateExpenseInput
 } from '../models/domain.models';
+import { AuthService } from '../auth/auth.service';
 import { DATA_GATEWAY, IDataGateway } from './data-gateway';
 import { ExpenseService } from './expense.service';
 
@@ -101,16 +103,26 @@ describe('ExpenseService', () => {
     localStorage.removeItem(billStorageKey);
   });
 
-  it('delegates and returns current group', (done) => {
-    const gateway = createGatewaySpy();
+  const provideService = (gateway: IDataGateway, userId = 'u1') => {
     TestBed.configureTestingModule({
       providers: [
         ExpenseService,
-        { provide: DATA_GATEWAY, useValue: gateway }
+        { provide: DATA_GATEWAY, useValue: gateway },
+        {
+          provide: AuthService,
+          useValue: {
+            user: signal({ id: userId, displayName: 'Test User', email: 'test@example.com' }).asReadonly()
+          }
+        }
       ]
     });
 
-    const service = TestBed.inject(ExpenseService);
+    return TestBed.inject(ExpenseService);
+  };
+
+  it('delegates and returns current group', (done) => {
+    const gateway = createGatewaySpy();
+    const service = provideService(gateway);
     service.getCurrentGroup().subscribe((result) => {
       expect(result.name).toBe('X-Split');
       expect(gateway.getCurrentGroup).toHaveBeenCalledTimes(1);
@@ -120,14 +132,7 @@ describe('ExpenseService', () => {
 
   it('does not duplicate bootstrap reads across concurrent stream subscriptions', async () => {
     const gateway = createGatewaySpy();
-    TestBed.configureTestingModule({
-      providers: [
-        ExpenseService,
-        { provide: DATA_GATEWAY, useValue: gateway }
-      ]
-    });
-
-    const service = TestBed.inject(ExpenseService);
+    const service = provideService(gateway);
 
     await firstValueFrom(
       combineLatest([
@@ -173,15 +178,7 @@ describe('ExpenseService', () => {
     const gateway = createGatewaySpy();
     gateway.getCurrentGroup.and.returnValue(of(groupWithExtraMember));
     gateway.getExpenses.and.returnValue(of(importLikeExpenses));
-
-    TestBed.configureTestingModule({
-      providers: [
-        ExpenseService,
-        { provide: DATA_GATEWAY, useValue: gateway }
-      ]
-    });
-
-    const service = TestBed.inject(ExpenseService);
+    const service = provideService(gateway);
     const balances = await firstValueFrom(service.getBalances().pipe(take(1)));
 
     const markBalance = balances.find((entry) => entry.memberId === 'm1')?.balance;
@@ -191,6 +188,63 @@ describe('ExpenseService', () => {
     expect(markBalance).toBe(-19.35);
     expect(richardBalance).toBe(19.35);
     expect(extraMemberBalance).toBeUndefined();
+  });
+
+  it('returns only members linked to the current bill when group has extra members', () => {
+    const gateway = createGatewaySpy();
+    const service = provideService(gateway);
+    const members = service.getBillMembers(
+      {
+        ...group,
+        members: [
+          ...group.members,
+          { id: 'm3', profileId: 'u3', displayName: 'Lars', role: 'member' }
+        ]
+      },
+      {
+        ...bill,
+        createdByProfileId: 'u1'
+      }
+    );
+
+    expect(members.map((member) => member.id)).toEqual(['m1', 'm2']);
+  });
+
+  it('filters out bills that are not shared with the current user', async () => {
+    const gateway = createGatewaySpy();
+    gateway.getCurrentGroup.and.returnValue(of({
+      ...group,
+      members: [
+        { id: 'm1', profileId: 'u1', displayName: 'Mark', role: 'owner' },
+        { id: 'm2', profileId: 'u2', displayName: 'Lucas', role: 'member' },
+        { id: 'm3', profileId: 'u3', displayName: 'Richard', role: 'member' }
+      ]
+    }));
+    gateway.getBills.and.returnValue(of([
+      {
+        id: 'b-lucas',
+        groupId: 'g1',
+        title: 'test',
+        createdByProfileId: 'u1',
+        friendName: 'Lucas',
+        friendMemberId: 'm2',
+        createdAt: '2026-03-01T00:00:00Z'
+      },
+      {
+        id: 'b-richard',
+        groupId: 'g1',
+        title: 'Shared Xbox Games',
+        createdByProfileId: 'u1',
+        friendName: 'Richard',
+        friendMemberId: 'm3',
+        createdAt: '2026-03-02T00:00:00Z'
+      }
+    ]));
+
+    const service = provideService(gateway, 'u2');
+    const bills = await firstValueFrom(service.getBills().pipe(take(1)));
+
+    expect(bills.map((entry) => entry.id)).toEqual(['b-lucas']);
   });
 
   it('restores selected bill on reload and syncs gateway bill context', async () => {
@@ -212,14 +266,7 @@ describe('ExpenseService', () => {
       })
     );
 
-    TestBed.configureTestingModule({
-      providers: [
-        ExpenseService,
-        { provide: DATA_GATEWAY, useValue: gateway }
-      ]
-    });
-
-    const service = TestBed.inject(ExpenseService);
+    const service = provideService(gateway);
     const selected = await firstValueFrom(service.getCurrentBill().pipe(take(1)));
     await firstValueFrom(service.getExpenses().pipe(take(1)));
 

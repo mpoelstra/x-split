@@ -8,6 +8,10 @@ import { ExpensesListComponent } from './expenses-list.component';
 describe('ExpensesListComponent', () => {
   let component: ExpensesListComponent;
   let userSignal: ReturnType<typeof signal>;
+  const billMembers = [
+    { id: 'm1', profileId: 'u1', displayName: 'Mark Poelstra', role: 'owner' as const },
+    { id: 'm3', profileId: 'u3', displayName: 'Richard Booij', role: 'member' as const }
+  ];
 
   beforeEach(async () => {
     userSignal = signal({
@@ -26,9 +30,9 @@ describe('ExpensesListComponent', () => {
                 id: 'g1',
                 name: 'X-Split',
                 members: [
-                  { id: 'm1', profileId: 'u1', displayName: 'Mark Poelstra', role: 'owner' },
+                  billMembers[0],
                   { id: 'm2', profileId: 'u2', displayName: 'Lucas Poelstra', role: 'member' },
-                  { id: 'm3', profileId: 'u3', displayName: 'Richard Booij', role: 'member' }
+                  billMembers[1]
                 ]
               }),
             getCurrentBill: () =>
@@ -56,7 +60,8 @@ describe('ExpensesListComponent', () => {
                   createdAt: '2026-03-04T00:00:00Z'
                 }
               ]),
-            deleteExpense: () => of(void 0)
+            deleteExpense: () => of(void 0),
+            getBillMembers: () => billMembers
           }
         },
         {
@@ -75,6 +80,23 @@ describe('ExpensesListComponent', () => {
     const expense = component.expenses()[0];
 
     expect(component.loanedLabel(expense)).toBe('You loaned Richard');
+  });
+
+  it('uses current bill member count for fallback split calculations', () => {
+    const amount = component.loanedAmount({
+      id: 'e-fallback',
+      groupId: 'g1',
+      billId: 'b1',
+      gameTitle: 'Fallback Split',
+      amount: 10,
+      currency: 'EUR',
+      paidByMemberId: 'm1',
+      expenseDate: '2026-03-05',
+      source: 'manual',
+      createdAt: '2026-03-05T11:30:00Z'
+    });
+
+    expect(amount).toBe(5);
   });
 
   it('allows delete/edit for friend member on the current bill', () => {

@@ -101,7 +101,10 @@ export class ExpensesListComponent {
       return expense.netToPayer;
     }
 
-    const memberCount = Math.max(this.group()?.members.length ?? 2, 1);
+    const memberCount = Math.max(
+      this.expenseService.getBillMembers(this.group(), this.currentBill()).length || 2,
+      1
+    );
     return expense.amount / memberCount;
   }
 

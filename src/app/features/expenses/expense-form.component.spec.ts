@@ -3,11 +3,16 @@ import { of } from 'rxjs';
 import { Router } from '@angular/router';
 import { ExpenseFormComponent } from './expense-form.component';
 import { ExpenseService } from '../../core/data/expense.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 describe('ExpenseFormComponent', () => {
   let component: ExpenseFormComponent;
   let addExpenseSpy: jasmine.Spy<(payload: unknown) => unknown>;
   let navigateByUrlSpy: jasmine.Spy<(url: string) => Promise<boolean>>;
+  const billMembers = [
+    { id: 'm1', profileId: 'u1', displayName: 'Mark', role: 'owner' as const },
+    { id: 'm2', profileId: 'u2', displayName: 'Richard', role: 'member' as const }
+  ];
 
   beforeEach(async () => {
     addExpenseSpy = jasmine.createSpy('addExpense').and.returnValue(
@@ -35,7 +40,10 @@ describe('ExpenseFormComponent', () => {
               of({
                 id: 'g1',
                 name: 'X-Split',
-                members: [{ id: 'm1', profileId: 'u1', displayName: 'Mark', role: 'owner' }]
+                members: [
+                  ...billMembers,
+                  { id: 'm3', profileId: 'u3', displayName: 'Lucas', role: 'member' }
+                ]
               }),
             addExpense: addExpenseSpy,
             getCurrentBill: () =>
@@ -43,15 +51,24 @@ describe('ExpenseFormComponent', () => {
                 id: 'b1',
                 groupId: 'g1',
                 title: 'Xbox Games',
+                createdByProfileId: 'u1',
+                friendMemberId: 'm2',
                 friendName: 'Richard',
                 createdAt: '2026-03-01T00:00:00Z'
-              })
+              }),
+            getBillMembers: () => billMembers
           }
         },
         {
           provide: Router,
           useValue: {
             navigateByUrl: navigateByUrlSpy
+          }
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            user: () => ({ id: 'u1', displayName: 'Mark', email: 'mark@example.com' })
           }
         }
       ]
@@ -118,5 +135,10 @@ describe('ExpenseFormComponent', () => {
       amount: 4.99,
       netToPayer: 2.5
     }));
+  });
+
+  it('limits payer options to members on the active bill', () => {
+    expect(component.memberOptions().map((member) => member.id)).toEqual(['m1', 'm2']);
+    expect(component.memberOptions().some((member) => member.id === 'm3')).toBeFalse();
   });
 });
